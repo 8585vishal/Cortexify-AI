@@ -186,6 +186,8 @@ function App() {
       const response = await axios.post(`${API}/chat`, {
         message: lastUserMessage.message,
         session_id: currentSessionId
+      }, {
+        timeout: 60000 // 60 seconds timeout for complex AI responses
       });
 
       const aiMessage = {
@@ -203,9 +205,15 @@ function App() {
     } catch (error) {
       setIsTyping(false);
       console.error('Error regenerating response:', error);
+      
+      let errorMessage = "Failed to regenerate response";
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = "Request timed out while regenerating. Please try again.";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to regenerate response",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
