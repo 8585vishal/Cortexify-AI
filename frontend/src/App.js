@@ -121,9 +121,12 @@ function App() {
     setIsTyping(true);
 
     try {
+      // Set a longer timeout for the axios request to handle complex queries
       const response = await axios.post(`${API}/chat`, {
         message: inputMessage,
         session_id: currentSessionId
+      }, {
+        timeout: 60000 // 60 seconds timeout for complex AI responses
       });
 
       const aiMessage = {
@@ -142,9 +145,18 @@ function App() {
     } catch (error) {
       setIsTyping(false);
       console.error('Error sending message:', error);
+      
+      // Better error handling for different scenarios
+      let errorMessage = "Failed to send message. Please try again.";
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = "Request timed out. The AI might be processing a complex response. Please try again.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "AI service temporarily unavailable. Please try again in a moment.";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
