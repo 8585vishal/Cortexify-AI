@@ -1,24 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Card, CardContent } from '../components/ui/card';
 import { ScrollArea } from '../components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Separator } from '../components/ui/separator';
-import { Badge } from '../components/ui/badge';
 import { toast } from '../hooks/use-toast';
-import { 
-  Send, 
-  Plus, 
-  MessageSquare, 
-  Trash2, 
-  Bot, 
-  User,
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
+import {
+  Send,
+  Plus,
+  MessageSquare,
+  Trash2,
   RotateCcw,
   Menu,
-  X
+  X,
+  Trash,
 } from 'lucide-react';
+import MessageBubble from '../components/MessageBubble';
+import TypingIndicator from '../components/TypingIndicator';
+import WelcomeScreen from '../components/WelcomeScreen';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -31,7 +41,8 @@ const ChatPage = () => {
   const [sessions, setSessions] = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -49,7 +60,9 @@ const ChatPage = () => {
   };
 
   const generateNewSession = () => {
-    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newSessionId = `session_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
     setCurrentSessionId(newSessionId);
     setMessages([]);
     setShowSidebar(false);
@@ -73,9 +86,9 @@ const ChatPage = () => {
     } catch (error) {
       console.error('Error loading chat history:', error);
       toast({
-        title: "Error",
-        description: "Failed to load chat history",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load chat history',
+        variant: 'destructive',
       });
     }
   };
@@ -83,26 +96,46 @@ const ChatPage = () => {
   const deleteChatSession = async (sessionId, event) => {
     event.stopPropagation();
 
-    // Confirm deletion with the user
-    const confirmed = window.confirm("Are you sure you want to delete this chat session? This action cannot be undone.");
-    if (!confirmed) return;
-
     try {
       await axios.delete(`${API}/chat/session/${sessionId}`);
-      setSessions(sessions.filter(s => s.id !== sessionId));
+      setSessions(sessions.filter((s) => s.id !== sessionId));
       if (sessionId === currentSessionId) {
         generateNewSession();
       }
       toast({
-        title: "Success",
-        description: "Chat session deleted",
+        title: 'Success',
+        description: 'Chat session deleted',
       });
     } catch (error) {
       console.error('Error deleting session:', error);
       toast({
-        title: "Error", 
-        description: "Failed to delete session",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to delete session',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteAllSessions = async () => {
+    try {
+      await Promise.all(
+        sessions.map((session) =>
+          axios.delete(`${API}/chat/session/${session.id}`)
+        )
+      );
+      setSessions([]);
+      generateNewSession();
+      setShowDeleteAllDialog(false);
+      toast({
+        title: 'Success',
+        description: 'All chat sessions deleted',
+      });
+    } catch (error) {
+      console.error('Error deleting all sessions:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete all sessions',
+        variant: 'destructive',
       });
     }
   };
@@ -114,50 +147,58 @@ const ChatPage = () => {
       id: `user_${Date.now()}`,
       message: inputMessage,
       sender: 'user',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
     setIsTyping(true);
 
     try {
-      const response = await axios.post(`${API}/chat`, {
-        message: inputMessage,
-        session_id: currentSessionId
-      }, {
-        timeout: 60000
-      });
+      const response = await axios.post(
+        `${API}/chat`,
+        {
+          message: inputMessage,
+          session_id: currentSessionId,
+        },
+        {
+          timeout: 60000,
+        }
+      );
 
       const aiMessage = {
         id: `ai_${Date.now()}`,
         message: response.data.ai_message,
         sender: 'ai',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       setTimeout(() => {
         setIsTyping(false);
-        setMessages(prev => [...prev, aiMessage]);
+        setMessages((prev) => [...prev, aiMessage]);
         fetchSessions();
       }, 1000);
-
     } catch (error) {
       setIsTyping(false);
       console.error('Error sending message:', error);
-      
-      let errorMessage = "Failed to send message. Please try again.";
-      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        errorMessage = "Request timed out. The AI might be processing a complex response. Please try again.";
+
+      let errorMessage = 'Failed to send message. Please try again.';
+      if (
+        error.code === 'ECONNABORTED' ||
+        error.message.includes('timeout')
+      ) {
+        errorMessage =
+          'Request timed out. The AI might be processing a complex response. Please try again.';
       } else if (error.response?.status === 500) {
-        errorMessage = "AI service temporarily unavailable. Please try again in a moment.";
+        errorMessage =
+          'AI service temporarily unavailable. Please try again in a moment.';
       }
-      
+
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -173,74 +214,87 @@ const ChatPage = () => {
 
   const regenerateResponse = async () => {
     if (messages.length < 2) return;
-    
-    const lastUserMessage = messages.filter(m => m.sender === 'user').pop();
+
+    const lastUserMessage = messages.filter((m) => m.sender === 'user').pop();
     if (!lastUserMessage) return;
 
-    setMessages(prev => prev.filter(m => !(m.sender === 'ai' && m === prev[prev.length - 1])));
+    setMessages((prev) =>
+      prev.filter((m) => !(m.sender === 'ai' && m === prev[prev.length - 1]))
+    );
     setIsLoading(true);
     setIsTyping(true);
 
     try {
-      const response = await axios.post(`${API}/chat`, {
-        message: lastUserMessage.message,
-        session_id: currentSessionId
-      }, {
-        timeout: 60000
-      });
+      const response = await axios.post(
+        `${API}/chat`,
+        {
+          message: lastUserMessage.message,
+          session_id: currentSessionId,
+        },
+        {
+          timeout: 60000,
+        }
+      );
 
       const aiMessage = {
         id: `ai_${Date.now()}`,
         message: response.data.ai_message,
         sender: 'ai',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       setTimeout(() => {
         setIsTyping(false);
-        setMessages(prev => [...prev, aiMessage]);
+        setMessages((prev) => [...prev, aiMessage]);
       }, 1000);
-
     } catch (error) {
       setIsTyping(false);
       console.error('Error regenerating response:', error);
-      
-      let errorMessage = "Failed to regenerate response";
-      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        errorMessage = "Request timed out while regenerating. Please try again.";
+
+      let errorMessage = 'Failed to regenerate response';
+      if (
+        error.code === 'ECONNABORTED' ||
+        error.message.includes('timeout')
+      ) {
+        errorMessage =
+          'Request timed out while regenerating. Please try again.';
       }
-      
+
       toast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const formatMessage = (text) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">$1</code>')
-      .replace(/\n/g, '<br/>');
-  };
-
   return (
-    <div className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex" data-testid="chat-page">
-      
-      {/* Sidebar Overlay */}
-      {showSidebar && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
-          onClick={() => setShowSidebar(false)}
-        />
-      )}
+    <div
+      className="min-h-screen pt-16 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex"
+      data-testid="chat-page"
+    >
+      <AnimatePresence>
+        {showSidebar && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setShowSidebar(false)}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-r border-gray-200 dark:border-gray-700 z-50 transform transition-transform duration-300 ${showSidebar ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:relative lg:w-80`}>
+      <motion.div
+        initial={false}
+        animate={{
+          x: showSidebar ? 0 : -320,
+        }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-r border-gray-200 dark:border-gray-700 z-50 lg:translate-x-0 lg:relative lg:w-80 flex flex-col"
+      >
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <Button
             onClick={generateNewSession}
@@ -253,42 +307,64 @@ const ChatPage = () => {
         </div>
 
         <ScrollArea className="flex-1 px-4 py-4">
-          <div className="space-y-2">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                onClick={() => loadChatHistory(session.id)}
-                className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                  session.id === currentSessionId ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' : ''
-                }`}
-                data-testid={`session-${session.id}`}
-              >
-                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                  <MessageSquare className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
-                    {session.title}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => deleteChatSession(session.id, e)}
-                  className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900/20"
-                  data-testid={`delete-session-${session.id}`}
+          <AnimatePresence>
+            <div className="space-y-2">
+              {sessions.map((session, index) => (
+                <motion.div
+                  key={session.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => loadChatHistory(session.id)}
+                  className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                    session.id === currentSessionId
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
+                      : ''
+                  }`}
+                  data-testid={`session-${session.id}`}
                 >
-                  <Trash2 className="w-3 h-3 text-red-500" />
-                </Button>
-              </div>
-            ))}
-          </div>
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <MessageSquare className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                      {session.title}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => deleteChatSession(session.id, e)}
+                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/20 transition-opacity"
+                    data-testid={`delete-session-${session.id}`}
+                  >
+                    <Trash2 className="w-3 h-3 text-red-500" />
+                  </Button>
+                </motion.div>
+              ))}
+            </div>
+          </AnimatePresence>
         </ScrollArea>
-      </div>
 
-      {/* Main Chat Area */}
+        {sessions.length > 0 && (
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              onClick={() => setShowDeleteAllDialog(true)}
+              variant="outline"
+              className="w-full rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800"
+            >
+              <Trash className="w-4 h-4 mr-2" />
+              Clear All Chats
+            </Button>
+          </div>
+        )}
+      </motion.div>
+
       <div className="flex-1 lg:ml-0 flex flex-col h-[calc(100vh-4rem)]">
-        
-        {/* Header */}
-        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 p-4">
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 p-4"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -309,7 +385,7 @@ const ChatPage = () => {
                 </p>
               </div>
             </div>
-            
+
             {messages.length > 0 && (
               <Button
                 onClick={regenerateResponse}
@@ -324,119 +400,33 @@ const ChatPage = () => {
               </Button>
             )}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Messages Area */}
         <ScrollArea className="flex-1 p-6">
           <div className="max-w-4xl mx-auto space-y-6">
-            
-            {messages.length === 0 && !isTyping && (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                  <Bot className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Welcome to CORTEXIFY
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-8">
-                  Your intelligent AI assistant is ready to help. Start a conversation!
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                  {[
-                    { icon: "💡", title: "Creative Ideas", desc: "Brainstorm and explore new concepts" },
-                    { icon: "📚", title: "Learning", desc: "Get explanations and tutorials" },
-                    { icon: "💼", title: "Productivity", desc: "Optimize workflows and tasks" },
-                    { icon: "🔍", title: "Research", desc: "Find and analyze information" }
-                  ].map((item, index) => (
-                    <Card key={index} className="p-4 hover:shadow-lg transition-all duration-200 cursor-pointer bg-white/50 dark:bg-gray-800/50 backdrop-blur border-gray-200 dark:border-gray-700">
-                      <CardContent className="p-0 text-center">
-                        <div className="text-2xl mb-2">{item.icon}</div>
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-1">{item.title}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{item.desc}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+            {messages.length === 0 && !isTyping && <WelcomeScreen />}
 
-            {messages.map((message, index) => (
-              <div
-                key={message.id || index}
-                className={`flex items-start space-x-4 ${
-                  message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                }`}
-                data-testid={`message-${message.sender}-${index}`}
-              >
-                <Avatar className="w-10 h-10 border-2 border-white dark:border-gray-700 shadow-lg">
-                  <AvatarFallback className={`${
-                    message.sender === 'user' 
-                      ? 'bg-gradient-to-br from-blue-500 to-purple-600' 
-                      : 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                  } text-white font-semibold`}>
-                    {message.sender === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className={`flex-1 ${message.sender === 'user' ? 'text-right' : ''}`}>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {message.sender === 'user' ? 'You' : 'CORTEXIFY'}
-                    </Badge>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  
-                  <Card className={`${
-                    message.sender === 'user'
-                      ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white border-0'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                  } shadow-lg`}>
-                    <CardContent className="p-4">
-                      <div 
-                        className={`prose prose-sm max-w-none ${
-                          message.sender === 'user' 
-                            ? 'prose-invert' 
-                            : 'prose-gray dark:prose-invert'
-                        }`}
-                        dangerouslySetInnerHTML={{ 
-                          __html: formatMessage(message.message) 
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            ))}
+            <AnimatePresence mode="popLayout">
+              {messages.map((message, index) => (
+                <MessageBubble
+                  key={message.id || index}
+                  message={message}
+                  index={index}
+                />
+              ))}
 
-            {isTyping && (
-              <div className="flex items-start space-x-4" data-testid="typing-indicator">
-                <Avatar className="w-10 h-10 border-2 border-white dark:border-gray-700 shadow-lg">
-                  <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-semibold">
-                    <Bot className="w-5 h-5" />
-                  </AvatarFallback>
-                </Avatar>
-                
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-lg">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">Thinking...</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-            
+              {isTyping && <TypingIndicator key="typing" />}
+            </AnimatePresence>
+
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
-        {/* Input Area */}
-        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 p-6">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 p-6"
+        >
           <div className="max-w-4xl mx-auto">
             <div className="relative">
               <Input
@@ -446,24 +436,49 @@ const ChatPage = () => {
                 onKeyPress={handleKeyPress}
                 placeholder="Message CORTEXIFY..."
                 disabled={isLoading}
-                className="pr-16 h-12 bg-white/90 dark:bg-gray-800/90 border-gray-200 dark:border-gray-600 rounded-2xl text-base shadow-lg focus:shadow-xl transition-all duration-200 backdrop-blur"
+                className="pr-16 h-14 bg-white/90 dark:bg-gray-800/90 border-gray-200 dark:border-gray-600 rounded-2xl text-base shadow-lg focus:shadow-xl transition-all duration-200 backdrop-blur"
                 data-testid="message-input"
               />
               <Button
                 onClick={sendMessage}
                 disabled={isLoading || !inputMessage.trim()}
-                className="absolute right-2 top-2 h-8 w-8 p-0 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute right-2 top-2 h-10 w-10 p-0 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 data-testid="send-btn"
               >
                 <Send className="w-4 h-4" />
               </Button>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-              CORTEXIFY can make mistakes. Consider checking important information.
+              CORTEXIFY can make mistakes. Consider checking important
+              information.
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
+
+      <AlertDialog
+        open={showDeleteAllDialog}
+        onOpenChange={setShowDeleteAllDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete all
+              your chat sessions and remove all conversation history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteAllSessions}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
