@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+# from emergentintegrations.llm.chat import LlmChat
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -26,7 +26,7 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # Initialize LLM Chat with Emergent LLM Key
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+# EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
 
 # Define Models
 class StatusCheck(BaseModel):
@@ -109,9 +109,10 @@ async def get_status_checks():
     
     return status_checks
 
-# Chat endpoints
+from fastapi import Request
+
 @api_router.post("/chat", response_model=ChatResponse)
-async def send_chat_message(input: ChatMessageCreate):
+async def send_chat_message(request: Request, input: ChatMessageCreate):
     try:
         # Create user message record
         user_message = ChatMessage(
@@ -119,46 +120,36 @@ async def send_chat_message(input: ChatMessageCreate):
             message=input.message,
             sender="user"
         )
-        
+
         # Save user message to database
         user_doc = user_message.model_dump()
         user_doc = prepare_for_mongo(user_doc)
         await db.chat_messages.insert_one(user_doc)
-        
-        # Initialize LLM Chat
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=input.session_id,
-            system_message="You are CORTEXIFY, an intelligent and helpful AI assistant. You provide thoughtful, accurate, and engaging responses to help users with their questions and tasks."
-        ).with_model("openai", "gpt-4o")
-        
-        # Create user message for LLM
-        llm_user_message = UserMessage(text=input.message)
-        
-        # Get AI response
-        ai_response = await chat.send_message(llm_user_message)
-        
+
+        # Simulate AI response (since LLM integration is commented out)
+        ai_response = f"Echo: {input.message}"
+
         # Create AI message record
         ai_message = ChatMessage(
             session_id=input.session_id,
             message=ai_response,
             sender="ai"
         )
-        
+
         # Save AI message to database
         ai_doc = ai_message.model_dump()
         ai_doc = prepare_for_mongo(ai_doc)
         await db.chat_messages.insert_one(ai_doc)
-        
+
         # Update or create session
         await update_or_create_session(input.session_id, input.message)
-        
+
         return ChatResponse(
             session_id=input.session_id,
             ai_message=ai_response,
             user_message=input.message
         )
-        
+
     except Exception as e:
         logging.error(f"Chat error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Chat service error: {str(e)}")

@@ -82,6 +82,11 @@ const ChatPage = () => {
 
   const deleteChatSession = async (sessionId, event) => {
     event.stopPropagation();
+
+    // Confirm deletion with the user
+    const confirmed = window.confirm("Are you sure you want to delete this chat session? This action cannot be undone.");
+    if (!confirmed) return;
+
     try {
       await axios.delete(`${API}/chat/session/${sessionId}`);
       setSessions(sessions.filter(s => s.id !== sessionId));
@@ -268,7 +273,7 @@ const ChatPage = () => {
                   variant="ghost"
                   size="sm"
                   onClick={(e) => deleteChatSession(session.id, e)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900/20"
+                  className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900/20"
                   data-testid={`delete-session-${session.id}`}
                 >
                   <Trash2 className="w-3 h-3 text-red-500" />
