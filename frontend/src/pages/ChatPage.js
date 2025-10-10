@@ -31,7 +31,7 @@ import TypingIndicator from '../components/TypingIndicator';
 import WelcomeScreen from '../components/WelcomeScreen';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
