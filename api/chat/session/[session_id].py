@@ -47,6 +47,11 @@ def handler(request):
             
             return {
                 'statusCode': 200,
+                'headers': {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET,DELETE,OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                },
                 'body': json.dumps(messages, default=str)
             }
             
@@ -64,6 +69,11 @@ def handler(request):
             asyncio.run(db.chat_messages.delete_many({"session_id": session_id}))
             return {
                 'statusCode': 200,
+                'headers': {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET,DELETE,OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                },
                 'body': json.dumps({'message': 'Session deleted successfully'})
             }
         except Exception as e:
