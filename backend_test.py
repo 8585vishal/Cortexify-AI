@@ -230,7 +230,7 @@ def main():
     success = tester.run_all_tests()
     
     # Save detailed results
-    with open('/app/test_reports/backend_test_results.json', 'w') as f:
+    with open('test_reports/backend_test_results.json', 'w') as f:
         json.dump({
             'summary': {
                 'total_tests': tester.tests_run,
