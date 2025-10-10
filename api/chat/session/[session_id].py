@@ -19,6 +19,17 @@ def parse_from_mongo(item):
     return item
 
 def handler(request):
+    if request['method'] == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET,DELETE,OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': ''
+        }
+    
     session_id = request['query']['session_id']  # For dynamic, it's in query or path
     
     # For Vercel, the path parameters are in request['pathParameters'] or something.

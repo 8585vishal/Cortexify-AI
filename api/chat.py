@@ -56,6 +56,16 @@ async def update_or_create_session(session_id: str, first_message: str):
         logging.error(f"Update/create session error: {str(e)}")
 
 def handler(request):
+    if request['method'] == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST,OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': ''
+        }
     if request['method'] != 'POST':
         return {
             'statusCode': 405,

@@ -19,6 +19,16 @@ def parse_from_mongo(item):
     return item
 
 def handler(request):
+    if request['method'] == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET,OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': ''
+        }
     if request['method'] != 'GET':
         return {
             'statusCode': 405,
