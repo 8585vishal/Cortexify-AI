@@ -5,7 +5,7 @@
   "framework": null,
   "functions": {
     "api/**/*.py": {
-      "runtime": "@vercel/python@0.5.0"
+      "runtime": "python3.11@1.0.0"
     }
   }
 }
