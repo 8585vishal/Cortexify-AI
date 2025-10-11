@@ -37,7 +37,7 @@ def handler(request):
     
     # From Vercel docs, for api/post/[id].py, the id is in request['query']['id']
     
-    session_id = request['query'].get('session_id')
+    session_id = request.get('pathParameters', {}).get('session_id')
     if not session_id:
         return {
             'statusCode': 400,
