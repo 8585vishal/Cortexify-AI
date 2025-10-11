@@ -1,0 +1,52 @@
+{
+  "summary": {
+    "total_tests": 7,
+    "passed_tests": 7,
+    "success_rate": "100.0%",
+    "timestamp": "2025-10-08T14:50:13.882164"
+  },
+  "test_results": [
+    {
+      "test": "API Root Endpoint",
+      "success": true,
+      "details": "Status: 200, Response: {'message': 'CORTEXIFY API is running!'}",
+      "timestamp": "2025-10-08T14:50:12.772181"
+    },
+    {
+      "test": "POST Status Check",
+      "success": true,
+      "details": "POST Status: 200, ID: 6a5cc7fb-4b1e-44ea-bda6-df4c329e3e7f",
+      "timestamp": "2025-10-08T14:50:12.821102"
+    },
+    {
+      "test": "GET Status Check",
+      "success": true,
+      "details": "GET Status: 200, Count: 1",
+      "timestamp": "2025-10-08T14:50:12.896282"
+    },
+    {
+      "test": "Send Chat Message",
+      "success": true,
+      "details": "Status: 200, AI Response Length: 59 chars, Sample: 'Hello! This is a test response. How can I assist y...'",
+      "timestamp": "2025-10-08T14:50:13.766612"
+    },
+    {
+      "test": "Get Chat Sessions",
+      "success": true,
+      "details": "Status: 200, Sessions Count: 3, Test session found",
+      "timestamp": "2025-10-08T14:50:13.806724"
+    },
+    {
+      "test": "Get Chat History",
+      "success": true,
+      "details": "Status: 200, Messages Count: 2, Contains user and AI messages",
+      "timestamp": "2025-10-08T14:50:13.843028"
+    },
+    {
+      "test": "Delete Session",
+      "success": true,
+      "details": "Status: 200, Message: Session deleted successfully",
+      "timestamp": "2025-10-08T14:50:13.881330"
+    }
+  ]
+}
