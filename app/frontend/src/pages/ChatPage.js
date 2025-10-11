@@ -30,7 +30,7 @@ import MessageBubble from '../components/MessageBubble';
 import TypingIndicator from '../components/TypingIndicator';
 import WelcomeScreen from '../components/WelcomeScreen';
 
-const API = 'AIzaSyDgGOO65BNRJ-87rB2CCT6TMSM_RpAXN78';
+const API = '/api';
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
