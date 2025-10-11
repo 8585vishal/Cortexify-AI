@@ -18,7 +18,7 @@ def parse_from_mongo(item):
                 item[key] = datetime.fromisoformat(value)
     return item
 
-def handler(request):
+async def handler(request):
     if request['method'] == 'OPTIONS':
         return {
             'statusCode': 200,
@@ -29,33 +29,24 @@ def handler(request):
             },
             'body': ''
         }
-    
-    session_id = request['query']['session_id']  # For dynamic, it's in query or path
-    
-    # For Vercel, the path parameters are in request['pathParameters'] or something.
-    # Assuming it's in request['query']['session_id'] for simplicity, but actually for [session_id], it's in path.
-    
-    # From Vercel docs, for api/post/[id].py, the id is in request['query']['id']
-    
+
     session_id = request.get('pathParameters', {}).get('session_id')
     if not session_id:
         return {
             'statusCode': 400,
             'body': json.dumps({'error': 'Session ID required'})
         }
-    
+
     if request['method'] == 'GET':
         try:
-            messages = asyncio.run(
-                db.chat_messages.find(
-                    {"session_id": session_id},
-                    {"_id": 0}
-                ).sort("timestamp", 1).to_list(1000)
-            )
-            
+            messages = await db.chat_messages.find(
+                {"session_id": session_id},
+                {"_id": 0}
+            ).sort("timestamp", 1).to_list(1000)
+
             for message in messages:
                 message = parse_from_mongo(message)
-            
+
             return {
                 'statusCode': 200,
                 'headers': {
@@ -65,19 +56,19 @@ def handler(request):
                 },
                 'body': json.dumps(messages, default=str)
             }
-            
+
         except Exception as e:
             logging.error(f"Get chat history error: {str(e)}")
             return {
                 'statusCode': 500,
                 'body': json.dumps({'error': 'Failed to get chat history'})
             }
-    
+
     elif request['method'] == 'DELETE':
         try:
             # Delete session and all related messages
-            asyncio.run(db.chat_sessions.delete_one({"id": session_id}))
-            asyncio.run(db.chat_messages.delete_many({"session_id": session_id}))
+            await db.chat_sessions.delete_one({"id": session_id})
+            await db.chat_messages.delete_many({"session_id": session_id})
             return {
                 'statusCode': 200,
                 'headers': {
@@ -93,7 +84,7 @@ def handler(request):
                 'statusCode': 500,
                 'body': json.dumps({'error': 'Failed to delete session'})
             }
-    
+
     else:
         return {
             'statusCode': 405,

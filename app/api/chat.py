@@ -56,7 +56,7 @@ async def update_or_create_session(session_id: str, first_message: str):
     except Exception as e:
         logging.error(f"Update/create session error: {str(e)}")
 
-def handler(request):
+async def handler(request):
     if request['method'] == 'OPTIONS':
         return {
             'statusCode': 200,
@@ -93,7 +93,7 @@ def handler(request):
 
         # Save user message to database
         user_doc = prepare_for_mongo(user_message)
-        asyncio.run(db.chat_messages.insert_one(user_doc))
+        await db.chat_messages.insert_one(user_doc)
 
         # Generate AI response using Google Gemini
         ai_response = model.generate_content(message).text
@@ -109,10 +109,10 @@ def handler(request):
 
         # Save AI message to database
         ai_doc = prepare_for_mongo(ai_message)
-        asyncio.run(db.chat_messages.insert_one(ai_doc))
+        await db.chat_messages.insert_one(ai_doc)
 
         # Update or create session
-        asyncio.run(update_or_create_session(session_id, message))
+        await update_or_create_session(session_id, message)
 
         response = {
             "session_id": session_id,

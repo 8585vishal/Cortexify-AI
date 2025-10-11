@@ -18,7 +18,7 @@ def parse_from_mongo(item):
                 item[key] = datetime.fromisoformat(value)
     return item
 
-def handler(request):
+async def handler(request):
     if request['method'] == 'OPTIONS':
         return {
             'statusCode': 200,
@@ -34,15 +34,13 @@ def handler(request):
             'statusCode': 405,
             'body': json.dumps({'error': 'Method not allowed'})
         }
-    
+
     try:
         # Get sessions
-        sessions = asyncio.run(
-            db.chat_sessions.find({}, {"_id": 0}).sort("updated_at", -1).to_list(100)
-        )
+        sessions = await db.chat_sessions.find({}, {"_id": 0}).sort("updated_at", -1).to_list(100)
         for session in sessions:
             session = parse_from_mongo(session)
-        
+
         return {
             'statusCode': 200,
             'headers': {
@@ -52,7 +50,7 @@ def handler(request):
             },
             'body': json.dumps(sessions, default=str)
         }
-        
+
     except Exception as e:
         logging.error(f"Get sessions error: {str(e)}")
         return {
