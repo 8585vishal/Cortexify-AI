@@ -1,24 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
-import { 
-  Bot, 
-  Moon, 
-  Sun, 
-  Menu, 
+import { useAuth } from '../contexts/AuthContext';
+import { AuthModal } from './AuthModal';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import {
+  Bot,
+  Moon,
+  Sun,
+  Menu,
   X,
   MessageSquare,
   Info,
   Star,
   DollarSign,
-  Mail
+  Mail,
+  User,
+  Settings,
+  LogOut,
+  LogIn
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Navbar = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const location = useLocation();
+  const { user, profile, signOut } = useAuth();
 
   useEffect(() => {
     if (isDarkMode) {
@@ -94,15 +111,62 @@ const Navbar = () => {
             >
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
-            
-            <Link to="/chat">
-              <Button 
-                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl px-6 shadow-lg hover:shadow-xl transition-all duration-200"
-                data-testid="cta-chat-button"
+
+            {user ? (
+              <>
+                <Link to="/chat">
+                  <Button
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl px-6 shadow-lg hover:shadow-xl transition-all duration-200"
+                    data-testid="cta-chat-button"
+                  >
+                    Start Chatting
+                  </Button>
+                </Link>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="rounded-full h-10 w-10 p-0">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile?.avatar_url} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold">
+                          {profile?.full_name?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
+                        <p className="text-xs text-gray-500">{user?.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={signOut} className="text-red-600 dark:text-red-400">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <Button
+                onClick={() => setShowAuthModal(true)}
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl px-6 shadow-lg hover:shadow-xl transition-all duration-200"
               >
-                Start Chatting
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
               </Button>
-            </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -130,7 +194,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <motion.div 
+          <motion.div
             className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -147,7 +211,7 @@ const Navbar = () => {
                     to={item.path}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
                       isActive
-                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -158,18 +222,50 @@ const Navbar = () => {
                   </Link>
                 );
               })}
-              
+
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <Link to="/chat" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl py-3 shadow-lg">
-                    Start Chatting
+                {user ? (
+                  <>
+                    <Link to="/chat" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl py-3 shadow-lg mb-2">
+                        Start Chatting
+                      </Button>
+                    </Link>
+                    <Button
+                      onClick={() => {
+                        signOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      variant="outline"
+                      className="w-full rounded-xl text-red-600 dark:text-red-400"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      setShowAuthModal(true);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl py-3 shadow-lg"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
                   </Button>
-                </Link>
+                )}
               </div>
             </div>
           </motion.div>
         )}
       </div>
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        initialMode="signin"
+      />
     </nav>
   );
 };
