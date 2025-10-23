@@ -18,7 +18,10 @@ import string
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import openai
+from openai import OpenAI
+from fastapi.responses import StreamingResponse
+import json
+import asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -38,7 +41,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 # OpenAI API key
-openai.api_key = os.environ.get('')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # Create the main app without a prefix
 app = FastAPI(title="CORTEXIFY API")
@@ -411,7 +415,52 @@ async def get_status_checks():
 
 from fastapi import Request
 
-@api_router.post("/chat", response_model=ChatResponse)
+class ChatStreamRequest(BaseModel):
+    history: List[Dict[str, str]]
+
+async def stream_chat_response(history: List[Dict[str, str]]):
+    try:
+        if not openai_client:
+            yield f"data: {json.dumps({'token': 'Error: OpenAI API key not configured. Please add OPENAI_API_KEY to your .env file.'})}"}\n\n"
+            yield "data: [DONE]\n\n"
+            return
+
+        messages = [{"role": "system", "content": "You are CORTEXIFY, a helpful AI assistant."}]
+        messages.extend(history)
+
+        stream = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            stream=True,
+            temperature=0.7
+        )
+
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                token = chunk.choices[0].delta.content
+                yield f"data: {json.dumps({'token': token})}\n\n"
+                await asyncio.sleep(0.01)
+
+        yield "data: [DONE]\n\n"
+
+    except Exception as e:
+        logging.error(f"OpenAI streaming error: {str(e)}")
+        error_msg = f"Error: {str(e)}"
+        yield f"data: {json.dumps({'token': error_msg})}\n\n"
+        yield "data: [DONE]\n\n"
+
+@api_router.post("/chat")
+async def stream_chat(request: ChatStreamRequest):
+    return StreamingResponse(
+        stream_chat_response(request.history),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+@api_router.post("/chat/authenticated", response_model=ChatResponse)
 async def send_chat_message(input: ChatMessageCreate, current_user: User = Depends(get_current_active_user)):
     try:
         # Create user message record
@@ -428,28 +477,28 @@ async def send_chat_message(input: ChatMessageCreate, current_user: User = Depen
 
         # Call OpenAI API
         try:
+            if not openai_client:
+                raise Exception("OpenAI API key not configured")
+
             # Get previous messages for context
             previous_messages = await db.chat_messages.find(
-                {"session_id": input.session_id}, 
+                {"session_id": input.session_id},
                 {"_id": 0}
-            ).sort("timestamp", 1).to_list(20)  # Get last 20 messages for context
-            
-            messages = []
+            ).sort("timestamp", 1).to_list(20)
+
+            messages = [{"role": "system", "content": "You are CORTEXIFY, a helpful AI assistant."}]
             for msg in previous_messages:
                 role = "user" if msg["sender"] == "user" else "assistant"
                 messages.append({"role": role, "content": msg["message"]})
-            
-            # Add current message
+
             messages.append({"role": "user", "content": input.message})
-            
-            # Call OpenAI API
-            response = openai.ChatCompletion.create(
+
+            response = openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages,
-                max_tokens=1000,
                 temperature=0.7
             )
-            
+
             ai_response = response.choices[0].message.content
         except Exception as e:
             logging.error(f"OpenAI API error: {str(e)}")
