@@ -30,8 +30,8 @@ import MessageBubble from '../components/MessageBubble';
 import TypingIndicator from '../components/TypingIndicator';
 import WelcomeScreen from '../components/WelcomeScreen';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+const API = `${BACKEND_URL}/api`;
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
@@ -45,6 +45,23 @@ const ChatPage = () => {
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // LocalStorage helpers
+  const sessionsKey = 'chat_sessions';
+  const messagesKey = (sid) => `chat_messages_${sid}`;
+  const readLS = (key, fallback) => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  const writeLS = (key, value) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {}
+  };
 
   useEffect(() => {
     fetchSessions();
@@ -66,12 +83,22 @@ const ChatPage = () => {
     setCurrentSessionId(newSessionId);
     setMessages([]);
     setShowSidebar(false);
+    // Create and persist a new session
+    const newSession = {
+      id: newSessionId,
+      title: 'New Chat',
+      created_at: new Date().toISOString(),
+    };
+    const updated = [newSession, ...readLS(sessionsKey, [])];
+    writeLS(sessionsKey, updated);
+    setSessions(updated);
+    writeLS(messagesKey(newSessionId), []);
   };
 
   const fetchSessions = async () => {
     try {
-      const response = await axios.get(`${API}/chat/sessions`);
-      setSessions(response.data);
+      const localSessions = readLS(sessionsKey, []);
+      setSessions(localSessions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
     }
@@ -79,8 +106,8 @@ const ChatPage = () => {
 
   const loadChatHistory = async (sessionId) => {
     try {
-      const response = await axios.get(`${API}/chat/session/${sessionId}`);
-      setMessages(response.data);
+      const history = readLS(messagesKey(sessionId), []);
+      setMessages(history);
       setCurrentSessionId(sessionId);
       setShowSidebar(false);
     } catch (error) {
@@ -95,48 +122,33 @@ const ChatPage = () => {
 
   const deleteChatSession = async (sessionId, event) => {
     event.stopPropagation();
-
     try {
-      await axios.delete(`${API}/chat/session/${sessionId}`);
-      setSessions(sessions.filter((s) => s.id !== sessionId));
+      const remaining = sessions.filter((s) => s.id !== sessionId);
+      setSessions(remaining);
+      writeLS(sessionsKey, remaining);
+      localStorage.removeItem(messagesKey(sessionId));
       if (sessionId === currentSessionId) {
         generateNewSession();
       }
-      toast({
-        title: 'Success',
-        description: 'Chat session deleted',
-      });
+      toast({ title: 'Success', description: 'Chat session deleted' });
     } catch (error) {
       console.error('Error deleting session:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete session',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete session', variant: 'destructive' });
     }
   };
 
   const deleteAllSessions = async () => {
     try {
-      await Promise.all(
-        sessions.map((session) =>
-          axios.delete(`${API}/chat/session/${session.id}`)
-        )
-      );
+      const all = readLS(sessionsKey, []);
+      all.forEach((s) => localStorage.removeItem(messagesKey(s.id)));
       setSessions([]);
+      writeLS(sessionsKey, []);
       generateNewSession();
       setShowDeleteAllDialog(false);
-      toast({
-        title: 'Success',
-        description: 'All chat sessions deleted',
-      });
+      toast({ title: 'Success', description: 'All chat sessions deleted' });
     } catch (error) {
       console.error('Error deleting all sessions:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete all sessions',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete all sessions', variant: 'destructive' });
     }
   };
 
@@ -150,56 +162,86 @@ const ChatPage = () => {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const startingMessages = [...messages, userMessage];
+    setMessages(startingMessages);
+    writeLS(messagesKey(currentSessionId), startingMessages);
     setInputMessage('');
     setIsLoading(true);
     setIsTyping(true);
 
     try {
-      const response = await axios.post(
-        `${API}/chat`,
-        {
-          message: inputMessage,
-          session_id: currentSessionId,
-        },
-        {
-          timeout: 60000,
-        }
-      );
+      // Prepare history for backend
+      const history = startingMessages.map((m) => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.message }));
+
+      const res = await fetch(`${API}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history }),
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error('Network error starting stream');
+      }
 
       const aiMessage = {
         id: `ai_${Date.now()}`,
-        message: response.data.ai_message,
+        message: '',
         sender: 'ai',
         timestamp: new Date().toISOString(),
       };
+      setMessages((prev) => [...prev, aiMessage]);
 
-      setTimeout(() => {
-        setIsTyping(false);
-        setMessages((prev) => [...prev, aiMessage]);
-        fetchSessions();
-      }, 1000);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+
+      let done = false;
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              const dataStr = line.slice(5).trim();
+              if (dataStr === '[DONE]') {
+                done = true;
+                break;
+              }
+              try {
+                const json = JSON.parse(dataStr);
+                const token = json?.token;
+                if (token) {
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    const lastIndex = updated.length - 1;
+                    updated[lastIndex] = { ...updated[lastIndex], message: (updated[lastIndex].message || '') + token };
+                    writeLS(messagesKey(currentSessionId), updated);
+                    return updated;
+                  });
+                }
+              } catch {}
+            }
+          }
+        }
+      }
+
+      setIsTyping(false);
+      // Update session title from first user message
+      setSessions((prev) => {
+        const updated = prev.map((s) => (s.id === currentSessionId ? { ...s, title: startingMessages[0]?.message?.slice(0, 50) || s.title } : s));
+        writeLS(sessionsKey, updated);
+        return updated;
+      });
     } catch (error) {
       setIsTyping(false);
       console.error('Error sending message:', error);
 
       let errorMessage = 'Failed to send message. Please try again.';
-      if (
-        error.code === 'ECONNABORTED' ||
-        error.message.includes('timeout')
-      ) {
-        errorMessage =
-          'Request timed out. The AI might be processing a complex response. Please try again.';
-      } else if (error.response?.status === 500) {
-        errorMessage =
-          'AI service temporarily unavailable. Please try again in a moment.';
+      if (String(error).toLowerCase().includes('timeout')) {
+        errorMessage = 'Request timed out. Please try again.';
       }
-
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -213,58 +255,68 @@ const ChatPage = () => {
   };
 
   const regenerateResponse = async () => {
-    if (messages.length < 2) return;
-
-    const lastUserMessage = messages.filter((m) => m.sender === 'user').pop();
+    if (messages.length < 1) return;
+    const lastUserMessage = [...messages].reverse().find((m) => m.sender === 'user');
     if (!lastUserMessage) return;
 
-    setMessages((prev) =>
-      prev.filter((m) => !(m.sender === 'ai' && m === prev[prev.length - 1]))
-    );
+    // Remove last AI message if present
+    setMessages((prev) => {
+      const trimmed = [...prev];
+      if (trimmed[trimmed.length - 1]?.sender === 'ai') trimmed.pop();
+      writeLS(messagesKey(currentSessionId), trimmed);
+      return trimmed;
+    });
     setIsLoading(true);
     setIsTyping(true);
 
     try {
-      const response = await axios.post(
-        `${API}/chat`,
-        {
-          message: lastUserMessage.message,
-          session_id: currentSessionId,
-        },
-        {
-          timeout: 60000,
+      const history = readLS(messagesKey(currentSessionId), []).map((m) => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.message }));
+      const res = await fetch(`${API}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history }),
+      });
+      if (!res.ok || !res.body) throw new Error('Network error starting stream');
+
+      const aiMessage = { id: `ai_${Date.now()}`, message: '', sender: 'ai', timestamp: new Date().toISOString() };
+      setMessages((prev) => [...prev, aiMessage]);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let done = false;
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              const dataStr = line.slice(5).trim();
+              if (dataStr === '[DONE]') { done = true; break; }
+              try {
+                const json = JSON.parse(dataStr);
+                const token = json?.token;
+                if (token) {
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    const lastIndex = updated.length - 1;
+                    updated[lastIndex] = { ...updated[lastIndex], message: (updated[lastIndex].message || '') + token };
+                    writeLS(messagesKey(currentSessionId), updated);
+                    return updated;
+                  });
+                }
+              } catch {}
+            }
+          }
         }
-      );
+      }
 
-      const aiMessage = {
-        id: `ai_${Date.now()}`,
-        message: response.data.ai_message,
-        sender: 'ai',
-        timestamp: new Date().toISOString(),
-      };
-
-      setTimeout(() => {
-        setIsTyping(false);
-        setMessages((prev) => [...prev, aiMessage]);
-      }, 1000);
+      setIsTyping(false);
     } catch (error) {
       setIsTyping(false);
       console.error('Error regenerating response:', error);
-
-      let errorMessage = 'Failed to regenerate response';
-      if (
-        error.code === 'ECONNABORTED' ||
-        error.message.includes('timeout')
-      ) {
-        errorMessage =
-          'Request timed out while regenerating. Please try again.';
-      }
-
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to regenerate response', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

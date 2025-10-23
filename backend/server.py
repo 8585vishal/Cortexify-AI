@@ -1,34 +1,95 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timezone
-# from emergentintegrations.llm.chat import LlmChat
+from datetime import datetime, timezone, timedelta
+import bcrypt
+import jwt
+from passlib.context import CryptContext
+import random
+import string
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import openai
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URI', 'mongodb://localhost:27017')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'cortexify')]
+
+# JWT settings
+SECRET_KEY = os.environ.get('JWT_SECRET', 'your-secret-key-for-development')
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Password hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+# OpenAI API key
+openai.api_key = os.environ.get('')
 
 # Create the main app without a prefix
-app = FastAPI()
+app = FastAPI(title="CORTEXIFY API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Initialize LLM Chat with Emergent LLM Key
-# EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
-
 # Define Models
+# User Authentication Models
+class UserBase(BaseModel):
+    email: EmailStr
+    username: str
+
+class UserCreate(UserBase):
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class User(UserBase):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    is_active: bool = True
+    is_verified: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user_id: str
+    username: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+    user_id: Optional[str] = None
+
+class OTPVerification(BaseModel):
+    email: EmailStr
+    otp: str
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+
+class PasswordReset(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
+# Chat Models
 class StatusCheck(BaseModel):
     model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
     
@@ -56,6 +117,7 @@ class ChatSession(BaseModel):
     model_config = ConfigDict(extra="ignore")
     
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
     title: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -80,6 +142,244 @@ def parse_from_mongo(item):
             if key in ['timestamp', 'created_at', 'updated_at'] and isinstance(value, str):
                 item[key] = datetime.fromisoformat(value)
     return item
+
+# Authentication helper functions
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def generate_otp(length=6):
+    return ''.join(random.choices(string.digits, k=length))
+
+async def get_user(email: str):
+    user = await db.users.find_one({"email": email})
+    if user:
+        return User(**parse_from_mongo(user))
+    return None
+
+async def authenticate_user(email: str, password: str):
+    user = await db.users.find_one({"email": email})
+    if not user:
+        return False
+    if not verify_password(password, user["password"]):
+        return False
+    return User(**parse_from_mongo(user))
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        user_id: str = payload.get("user_id")
+        if email is None or user_id is None:
+            raise credentials_exception
+        token_data = TokenData(email=email, user_id=user_id)
+    except jwt.PyJWTError:
+        raise credentials_exception
+    user = await db.users.find_one({"email": token_data.email})
+    if user is None:
+        raise credentials_exception
+    return User(**parse_from_mongo(user))
+
+async def get_current_active_user(current_user: User = Depends(get_current_user)):
+    if not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+async def send_email(recipient_email: str, subject: str, html_content: str):
+    try:
+        sender_email = os.environ.get("EMAIL_USER")
+        sender_password = os.environ.get("EMAIL_PASS")
+        
+        message = MIMEMultipart("alternative")
+        message["Subject"] = subject
+        message["From"] = sender_email
+        message["To"] = recipient_email
+        
+        html_part = MIMEText(html_content, "html")
+        message.attach(html_part)
+        
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, recipient_email, message.as_string())
+        return True
+    except Exception as e:
+        logging.error(f"Email sending error: {str(e)}")
+        return False
+
+# Authentication routes
+@api_router.post("/auth/register", response_model=User)
+async def register_user(user: UserCreate):
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": user.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Hash the password
+    hashed_password = get_password_hash(user.password)
+    
+    # Create new user
+    new_user = User(
+        email=user.email,
+        username=user.username,
+        is_active=True,
+        is_verified=False
+    )
+    
+    # Prepare user document for MongoDB
+    user_doc = new_user.model_dump()
+    user_doc["password"] = hashed_password
+    user_doc = prepare_for_mongo(user_doc)
+    
+    # Generate OTP
+    otp = generate_otp()
+    user_doc["otp"] = otp
+    user_doc["otp_created_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Insert user into database
+    await db.users.insert_one(user_doc)
+    
+    # Send verification email
+    email_subject = "CORTEXIFY - Verify Your Email"
+    email_content = f"""
+    <html>
+    <body>
+        <h2>Welcome to CORTEXIFY!</h2>
+        <p>Your verification code is: <strong>{otp}</strong></p>
+        <p>This code will expire in 10 minutes.</p>
+    </body>
+    </html>
+    """
+    await send_email(user.email, email_subject, email_content)
+    
+    return new_user
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(verification: OTPVerification):
+    user = await db.users.find_one({"email": verification.email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    stored_otp = user.get("otp")
+    otp_created_at = datetime.fromisoformat(user.get("otp_created_at"))
+    
+    # Check if OTP is expired (10 minutes)
+    if datetime.now(timezone.utc) - otp_created_at > timedelta(minutes=10):
+        raise HTTPException(status_code=400, detail="OTP expired")
+    
+    if stored_otp != verification.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    
+    # Mark user as verified
+    await db.users.update_one(
+        {"email": verification.email},
+        {"$set": {"is_verified": True, "otp": None, "otp_created_at": None}}
+    )
+    
+    return {"message": "Email verified successfully"}
+
+@api_router.post("/auth/login", response_model=Token)
+async def login_for_access_token(form_data: UserLogin):
+    user = await authenticate_user(form_data.email, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not user.is_verified:
+        raise HTTPException(status_code=400, detail="Email not verified")
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email, "user_id": user.id}, expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "username": user.username
+    }
+
+@api_router.post("/auth/request-otp")
+async def request_otp(request: OTPRequest):
+    user = await db.users.find_one({"email": request.email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Generate new OTP
+    otp = generate_otp()
+    
+    # Update user with new OTP
+    await db.users.update_one(
+        {"email": request.email},
+        {"$set": {
+            "otp": otp,
+            "otp_created_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Send OTP email
+    email_subject = "CORTEXIFY - Your OTP Code"
+    email_content = f"""
+    <html>
+    <body>
+        <h2>CORTEXIFY - One-Time Password</h2>
+        <p>Your verification code is: <strong>{otp}</strong></p>
+        <p>This code will expire in 10 minutes.</p>
+    </body>
+    </html>
+    """
+    await send_email(request.email, email_subject, email_content)
+    
+    return {"message": "OTP sent successfully"}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(reset_data: PasswordReset):
+    user = await db.users.find_one({"email": reset_data.email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    stored_otp = user.get("otp")
+    otp_created_at = datetime.fromisoformat(user.get("otp_created_at"))
+    
+    # Check if OTP is expired (10 minutes)
+    if datetime.now(timezone.utc) - otp_created_at > timedelta(minutes=10):
+        raise HTTPException(status_code=400, detail="OTP expired")
+    
+    if stored_otp != reset_data.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    
+    # Update password
+    hashed_password = get_password_hash(reset_data.new_password)
+    await db.users.update_one(
+        {"email": reset_data.email},
+        {"$set": {"password": hashed_password, "otp": None, "otp_created_at": None}}
+    )
+    
+    return {"message": "Password reset successfully"}
+
+@api_router.get("/auth/me", response_model=User)
+async def get_user_me(current_user: User = Depends(get_current_active_user)):
+    return current_user
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
@@ -112,7 +412,7 @@ async def get_status_checks():
 from fastapi import Request
 
 @api_router.post("/chat", response_model=ChatResponse)
-async def send_chat_message(request: Request, input: ChatMessageCreate):
+async def send_chat_message(input: ChatMessageCreate, current_user: User = Depends(get_current_active_user)):
     try:
         # Create user message record
         user_message = ChatMessage(
@@ -126,8 +426,34 @@ async def send_chat_message(request: Request, input: ChatMessageCreate):
         user_doc = prepare_for_mongo(user_doc)
         await db.chat_messages.insert_one(user_doc)
 
-        # Simulate AI response (since LLM integration is commented out)
-        ai_response = f"Echo: {input.message}"
+        # Call OpenAI API
+        try:
+            # Get previous messages for context
+            previous_messages = await db.chat_messages.find(
+                {"session_id": input.session_id}, 
+                {"_id": 0}
+            ).sort("timestamp", 1).to_list(20)  # Get last 20 messages for context
+            
+            messages = []
+            for msg in previous_messages:
+                role = "user" if msg["sender"] == "user" else "assistant"
+                messages.append({"role": role, "content": msg["message"]})
+            
+            # Add current message
+            messages.append({"role": "user", "content": input.message})
+            
+            # Call OpenAI API
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                max_tokens=1000,
+                temperature=0.7
+            )
+            
+            ai_response = response.choices[0].message.content
+        except Exception as e:
+            logging.error(f"OpenAI API error: {str(e)}")
+            ai_response = "I'm sorry, I encountered an error processing your request."
 
         # Create AI message record
         ai_message = ChatMessage(
@@ -142,7 +468,7 @@ async def send_chat_message(request: Request, input: ChatMessageCreate):
         await db.chat_messages.insert_one(ai_doc)
 
         # Update or create session
-        await update_or_create_session(input.session_id, input.message)
+        await update_or_create_session(input.session_id, input.message, current_user.id)
 
         return ChatResponse(
             session_id=input.session_id,
@@ -155,9 +481,13 @@ async def send_chat_message(request: Request, input: ChatMessageCreate):
         raise HTTPException(status_code=500, detail=f"Chat service error: {str(e)}")
 
 @api_router.get("/chat/sessions", response_model=List[ChatSession])
-async def get_chat_sessions():
+async def get_chat_sessions(current_user: User = Depends(get_current_active_user)):
     try:
-        sessions = await db.chat_sessions.find({}, {"_id": 0}).sort("updated_at", -1).to_list(100)
+        sessions = await db.chat_sessions.find(
+            {"user_id": current_user.id}, 
+            {"_id": 0}
+        ).sort("updated_at", -1).to_list(100)
+        
         for session in sessions:
             session = parse_from_mongo(session)
         return sessions
@@ -166,8 +496,13 @@ async def get_chat_sessions():
         raise HTTPException(status_code=500, detail="Failed to get chat sessions")
 
 @api_router.get("/chat/session/{session_id}", response_model=List[ChatMessage])
-async def get_chat_history(session_id: str):
+async def get_chat_history(session_id: str, current_user: User = Depends(get_current_active_user)):
     try:
+        # Verify session belongs to user
+        session = await db.chat_sessions.find_one({"id": session_id, "user_id": current_user.id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or access denied")
+        
         messages = await db.chat_messages.find(
             {"session_id": session_id}, 
             {"_id": 0}
@@ -182,8 +517,13 @@ async def get_chat_history(session_id: str):
         raise HTTPException(status_code=500, detail="Failed to get chat history")
 
 @api_router.delete("/chat/session/{session_id}")
-async def delete_chat_session(session_id: str):
+async def delete_chat_session(session_id: str, current_user: User = Depends(get_current_active_user)):
     try:
+        # Verify session belongs to user
+        session = await db.chat_sessions.find_one({"id": session_id, "user_id": current_user.id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found or access denied")
+            
         # Delete session and all related messages
         await db.chat_sessions.delete_one({"id": session_id})
         await db.chat_messages.delete_many({"session_id": session_id})
@@ -192,7 +532,7 @@ async def delete_chat_session(session_id: str):
         logging.error(f"Delete session error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete session")
 
-async def update_or_create_session(session_id: str, first_message: str):
+async def update_or_create_session(session_id: str, first_message: str, user_id: str):
     """Update existing session or create new one with auto-generated title"""
     try:
         existing_session = await db.chat_sessions.find_one({"id": session_id})
@@ -211,6 +551,7 @@ async def update_or_create_session(session_id: str, first_message: str):
             title = first_message[:50] + "..." if len(first_message) > 50 else first_message
             session = ChatSession(
                 id=session_id,
+                user_id=user_id,
                 title=title
             )
             

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabaseClient';
+import { useChat } from '../contexts/ChatContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ScrollArea } from '../components/ui/scroll-area';
@@ -15,27 +15,20 @@ import {
   Trash2,
   RotateCcw,
   Menu,
-  X,
-  Trash,
-  Folder,
-  FolderPlus,
   Pin,
   Archive,
   Search,
-  Settings,
-  Download,
   Star,
   TrendingUp,
   BookOpen,
   Sparkles,
   Bot,
   User as UserIcon,
-  ChevronDown,
   MoreVertical,
 } from 'lucide-react';
 import MessageBubble from '../components/MessageBubble';
 import TypingIndicator from '../components/TypingIndicator';
-import { AuthModal } from '../components/AuthModal';
+// Auth modal and API key dialog removed to allow guest usage and backend-managed keys
 
 import {
   DropdownMenu,
@@ -58,27 +51,41 @@ import {
 
 const AdvancedChatPage = () => {
   const { user, profile } = useAuth();
-  const [messages, setMessages] = useState([]);
+  const { 
+    messages, 
+    setCurrentSession, 
+    currentSession, 
+    sessions, 
+    folders,
+    isLoading,
+    createSession,
+    loadSession,
+    deleteSession,
+    sendMessage,
+    fetchSessions,
+    fetchFolders,
+    createFolder,
+    deleteFolder,
+    updateSession
+  } = useChat();
+  
   const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentSession, setCurrentSession] = useState(null);
-  const [sessions, setSessions] = useState([]);
-  const [folders, setFolders] = useState([]);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  // Guest usage enabled; no auth modal gating
   const [selectedFolder, setSelectedFolder] = useState(null);
+  // Removed API key storage. Keys are configured once on backend.
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
     if (user) {
-      loadUserData();
-      subscribeToRealtime();
+      // Initial data loading is handled by ChatContext
+      // No need to call loadUserData() or subscribeToRealtime() here
     }
   }, [user]);
 
@@ -86,95 +93,59 @@ const AdvancedChatPage = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  // Removed local API key preload. Backend handles all API authentication.
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  const loadUserData = async () => {
-    await Promise.all([fetchSessions(), fetchFolders()]);
-  };
-
-  const subscribeToRealtime = () => {
-    const channel = supabase
-      .channel('chat_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_sessions',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchSessions();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  };
-
-  const fetchSessions = async () => {
+  
+  const handleCreateFolder = async () => {
+    const folderName = prompt('Enter folder name:');
+    if (!folderName) return;
+    
     try {
-      const { data, error } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_archived', false)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      setSessions(data || []);
+      await createFolder(folderName);
+      toast({
+        title: 'Success',
+        description: 'Folder created successfully',
+      });
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      console.error('Error creating folder:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load chat sessions',
+        description: 'Failed to create folder',
         variant: 'destructive',
       });
     }
   };
 
-  const fetchFolders = async () => {
+  const handleDeleteFolder = async (folderId) => {
+    if (!confirm('Are you sure you want to delete this folder and all its chats?')) return;
+    
     try {
-      const { data, error } = await supabase
-        .from('folders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('sort_order', { ascending: true });
-
-      if (error) throw error;
-      setFolders(data || []);
+      await deleteFolder(folderId);
+      setSelectedFolder(null);
+      toast({
+        title: 'Success',
+        description: 'Folder deleted successfully',
+      });
     } catch (error) {
-      console.error('Error fetching folders:', error);
+      console.error('Error deleting folder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete folder',
+        variant: 'destructive',
+      });
     }
   };
 
   const createNewSession = async () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('chat_sessions')
-        .insert({
-          user_id: user.id,
-          title: 'New Chat',
-          folder_id: selectedFolder,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCurrentSession(data);
-      setMessages([]);
-      await fetchSessions();
-
+      const newSession = await createSession('New Chat', selectedFolder);
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+      
       toast({
         title: 'Success',
         description: 'New chat session created',
@@ -189,26 +160,13 @@ const AdvancedChatPage = () => {
     }
   };
 
-  const loadSession = async (sessionId) => {
+  const handleLoadSession = async (sessionId) => {
     try {
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .single();
-
-      if (sessionError) throw sessionError;
-      setCurrentSession(sessionData);
-
-      const { data: messagesData, error: messagesError } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-
-      if (messagesError) throw messagesError;
-      setMessages(messagesData || []);
+      await loadSession(sessionId);
       setShowSidebar(false);
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
     } catch (error) {
       console.error('Error loading session:', error);
       toast({
@@ -219,22 +177,14 @@ const AdvancedChatPage = () => {
     }
   };
 
-  const deleteSession = async (sessionId) => {
+  const handleDeleteSession = async (sessionId) => {
     try {
-      const { error } = await supabase
-        .from('chat_sessions')
-        .delete()
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-      setSessions(sessions.filter((s) => s.id !== sessionId));
-
-      if (currentSession?.id === sessionId) {
-        setCurrentSession(null);
-        setMessages([]);
-      }
-
+      const targetId = sessionId ?? sessionToDelete;
+      if (!targetId) return;
+      await deleteSession(targetId);
+      setShowDeleteDialog(false);
+      setSessionToDelete(null);
+      
       toast({
         title: 'Success',
         description: 'Chat session deleted',
@@ -249,46 +199,48 @@ const AdvancedChatPage = () => {
     }
   };
 
-  const pinSession = async (sessionId, isPinned) => {
-    try {
-      const { error } = await supabase
-        .from('chat_sessions')
-        .update({ is_pinned: !isPinned })
-        .eq('id', sessionId);
+  const openDeleteDialog = (id) => {
+    setSessionToDelete(id);
+    setShowDeleteDialog(true);
+  };
 
-      if (error) throw error;
-      await fetchSessions();
+  const handlePinSession = async (sessionId, isPinned) => {
+    try {
+      await updateSession(sessionId, { is_pinned: !isPinned });
+      toast({
+        title: 'Success',
+        description: isPinned ? 'Chat unpinned successfully' : 'Chat pinned successfully',
+      });
     } catch (error) {
       console.error('Error pinning session:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update chat',
+        variant: 'destructive',
+      });
     }
   };
 
-  const archiveSession = async (sessionId) => {
+  const handleArchiveSession = async (sessionId) => {
     try {
-      const { error } = await supabase
-        .from('chat_sessions')
-        .update({ is_archived: true })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-      await fetchSessions();
-
+      await updateSession(sessionId, { is_archived: true });
+      
       toast({
         title: 'Success',
-        description: 'Chat session archived',
+        description: 'Chat archived successfully',
       });
     } catch (error) {
       console.error('Error archiving session:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to archive chat',
+        variant: 'destructive',
+      });
     }
   };
 
-  const sendMessage = async () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
-
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
 
     if (!currentSession) {
       await createNewSession();
@@ -297,70 +249,11 @@ const AdvancedChatPage = () => {
 
     const userMessageText = inputMessage;
     setInputMessage('');
-    setIsLoading(true);
     setIsTyping(true);
 
     try {
-      const { data: userMessage, error: userError } = await supabase
-        .from('chat_messages')
-        .insert({
-          session_id: currentSession.id,
-          user_id: user.id,
-          role: 'user',
-          content: userMessageText,
-        })
-        .select()
-        .single();
-
-      if (userError) throw userError;
-
-      setMessages((prev) => [...prev, userMessage]);
-
-      if (currentSession.message_count === 0) {
-        const title = userMessageText.substring(0, 50) + (userMessageText.length > 50 ? '...' : '');
-        await supabase
-          .from('chat_sessions')
-          .update({ title })
-          .eq('id', currentSession.id);
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const aiResponse = `This is a simulated AI response to: "${userMessageText}".
-
-In a production environment, this would integrate with a real AI service like OpenAI, Anthropic Claude, or other LLM providers. The response would be generated based on the conversation context and the AI model's capabilities.
-
-For now, this demonstrates the chat interface, message flow, and database persistence.`;
-
-      const { data: aiMessage, error: aiError } = await supabase
-        .from('chat_messages')
-        .insert({
-          session_id: currentSession.id,
-          user_id: user.id,
-          role: 'assistant',
-          content: aiResponse,
-          tokens_used: 150,
-          model: currentSession.model || 'gpt-4',
-        })
-        .select()
-        .single();
-
-      if (aiError) throw aiError;
-
+      await sendMessage(userMessageText);
       setIsTyping(false);
-      setMessages((prev) => [...prev, aiMessage]);
-
-      await supabase
-        .from('usage_analytics')
-        .insert({
-          user_id: user.id,
-          session_id: currentSession.id,
-          event_type: 'message_sent',
-          tokens_used: 150,
-          model: currentSession.model || 'gpt-4',
-        });
-
-      await fetchSessions();
     } catch (error) {
       setIsTyping(false);
       console.error('Error sending message:', error);
@@ -369,48 +262,17 @@ For now, this demonstrates the chat interface, message flow, and database persis
         description: 'Failed to send message',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSendMessage();
     }
   };
 
-  const exportChat = async () => {
-    if (!currentSession || messages.length === 0) return;
-
-    const chatExport = {
-      session: currentSession,
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-        timestamp: m.created_at,
-      })),
-      exported_at: new Date().toISOString(),
-    };
-
-    const blob = new Blob([JSON.stringify(chatExport, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chat-export-${currentSession.id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: 'Success',
-      description: 'Chat exported successfully',
-    });
-  };
+  // Removed Export functionality per requirements.
 
   const filteredSessions = sessions.filter((session) =>
     session.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -419,36 +281,7 @@ For now, this demonstrates the chat interface, message flow, and database persis
   const pinnedSessions = filteredSessions.filter((s) => s.is_pinned);
   const regularSessions = filteredSessions.filter((s) => !s.is_pinned);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen pt-16 bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-blue-950 dark:to-cyan-950 flex items-center justify-center">
-        <div className="text-center space-y-6 p-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 mb-4">
-            <Bot className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Welcome to CORTEXIFY
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-md">
-            Sign in to unlock enterprise-grade AI chat capabilities with advanced features like folders, analytics, and real-time collaboration.
-          </p>
-          <Button
-            onClick={() => setShowAuthModal(true)}
-            size="lg"
-            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-6 text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all"
-          >
-            <Sparkles className="w-5 h-5 mr-2" />
-            Get Started
-          </Button>
-        </div>
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          initialMode="signin"
-        />
-      </div>
-    );
-  }
+  // Always render chat UI; guests can use chat with backend-managed API key
 
   return (
     <div className="min-h-screen pt-16 bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-gray-900 dark:via-blue-950 dark:to-cyan-950 flex">
@@ -509,9 +342,9 @@ For now, this demonstrates the chat interface, message flow, and database persis
                       session={session}
                       isActive={currentSession?.id === session.id}
                       onSelect={loadSession}
-                      onDelete={deleteSession}
-                      onPin={pinSession}
-                      onArchive={archiveSession}
+                      onDelete={openDeleteDialog}
+                      onPin={handlePinSession}
+                      onArchive={handleArchiveSession}
                     />
                   ))}
                 </div>
@@ -533,9 +366,9 @@ For now, this demonstrates the chat interface, message flow, and database persis
                       session={session}
                       isActive={currentSession?.id === session.id}
                       onSelect={loadSession}
-                      onDelete={deleteSession}
-                      onPin={pinSession}
-                      onArchive={archiveSession}
+                      onDelete={openDeleteDialog}
+                      onPin={handlePinSession}
+                      onArchive={handleArchiveSession}
                     />
                   ))}
                 </div>
@@ -595,18 +428,10 @@ For now, this demonstrates the chat interface, message flow, and database persis
             </div>
 
             {currentSession && (
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={exportChat}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            {/* API Key and Export removed. Backend-managed API key is used globally. */}
+          </div>
+        )}
           </div>
         </motion.div>
 
@@ -654,7 +479,7 @@ For now, this demonstrates the chat interface, message flow, and database persis
                 className="pr-16 h-14 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 rounded-2xl text-base shadow-xl focus:shadow-2xl transition-all duration-200"
               />
               <Button
-                onClick={sendMessage}
+                onClick={handleSendMessage}
                 disabled={isLoading || !inputMessage.trim()}
                 className="absolute right-2 top-2 h-10 w-10 p-0 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
               >
@@ -671,28 +496,20 @@ For now, this demonstrates the chat interface, message flow, and database persis
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Chat Session?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this chat session and all its messages.
+              This action cannot be undone. This will permanently delete this chat
+              and all its messages.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (sessionToDelete) {
-                  deleteSession(sessionToDelete);
-                  setSessionToDelete(null);
-                }
-                setShowDeleteDialog(false);
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteSession}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* API Key dialog removed. All requests use backend credentials. */}
     </div>
   );
 };
@@ -740,7 +557,10 @@ const SessionItem = ({ session, isActive, onSelect, onDelete, onPin, onArchive }
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={(e) => { e.stopPropagation(); onDelete(session.id); }}
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              onDelete(session.id);
+            }}
             className="text-red-600 dark:text-red-400"
           >
             <Trash2 className="w-4 h-4 mr-2" />

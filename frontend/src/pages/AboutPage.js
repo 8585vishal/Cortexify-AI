@@ -32,19 +32,19 @@ const AboutPage = () => {
     {
       name: "Alex Chen",
       role: "CEO & Founder",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format",
+      avatar: "/images/avatar2.svg",
       bio: "AI researcher with 10+ years in machine learning and natural language processing."
     },
     {
       name: "Sarah Rodriguez",
       role: "CTO",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b602bd5c?w=150&h=150&fit=crop&crop=face&auto=format",
+      avatar: "/images/avatar1.svg",
       bio: "Former Google engineer specializing in scalable AI systems and user experience."
     },
     {
       name: "Michael Park",
       role: "Head of AI",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format",
+      avatar: "/images/avatar3.svg",
       bio: "PhD in Computer Science, leading research in conversational AI and language models."
     }
   ];
@@ -90,7 +90,7 @@ const AboutPage = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <img 
-              src="https://images.unsplash.com/photo-1677442136019-21780ecad995?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzV8MHwxfHNlYXJjaHwyfHxBSSUyMHRlY2hub2xvZ3l8ZW58MHx8fHwxNzU5OTM1Mzk5fDA&ixlib=rb-4.1.0&q=85"
+              src="/images/about-ai.svg"
               alt="AI Technology"
               className="rounded-2xl shadow-2xl"
             />
@@ -159,7 +159,7 @@ const AboutPage = () => {
               viewport={{ once: true }}
             >
               <img 
-                src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzV8MHwxfHNlYXJjaHwzfHxBSSUyMHRlY2hub2xvZ3l8ZW58MHx8fHwxNzU5OTM1Mzk5fDA&ixlib=rb-4.1.0&q=85"
+                src="/images/circuit-brain.svg"
                 alt="Circuit Brain"
                 className="rounded-2xl shadow-xl"
               />

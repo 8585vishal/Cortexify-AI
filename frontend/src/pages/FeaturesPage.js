@@ -148,7 +148,7 @@ const FeaturesPage = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <img 
-              src="https://images.unsplash.com/photo-1694878981888-7a526050b455?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxjaGF0JTIwaW50ZXJmYWNlfGVufDB8fHx8MTc1OTkzNTQwNnww&ixlib=rb-4.1.0&q=85"
+              src="/images/features-chat.svg"
               alt="Chat Interface"
               className="rounded-2xl shadow-2xl"
             />

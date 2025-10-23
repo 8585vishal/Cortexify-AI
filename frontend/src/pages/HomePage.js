@@ -54,19 +54,19 @@ const HomePage = () => {
     {
       name: "Sarah Chen",
       role: "Product Manager",
-      avatar: "https://images.unsplash.com/photo-1494790108755-2616b602bd5c?w=64&h=64&fit=crop&crop=face&auto=format",
+      avatar: "/images/avatar1.svg",
       content: "CORTEXIFY has revolutionized how our team collaborates. The AI understands context incredibly well."
     },
     {
       name: "Michael Rodriguez",
       role: "Software Developer",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=face&auto=format",
+      avatar: "/images/avatar2.svg",
       content: "The response quality is outstanding. It feels like talking to a knowledgeable colleague who's always available."
     },
     {
       name: "Emma Thompson",
       role: "Creative Director",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop&crop=face&auto=format",
+      avatar: "/images/avatar3.svg",
       content: "From brainstorming to problem-solving, CORTEXIFY helps me think through ideas more effectively."
     }
   ];
@@ -79,7 +79,7 @@ const HomePage = () => {
         <div 
           className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-emerald-900/20"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1523961131990-5ea7c61b2107?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzV8MHwxfHNlYXJjaHwxfHxBSSUyMHRlY2hub2xvZ3l8ZW58MHx8fHwxNzU5OTM1Mzk5fDA&ixlib=rb-4.1.0&q=85')`,
+            backgroundImage: `url('/images/hero-bg.svg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             opacity: 0.1
@@ -145,7 +145,7 @@ const HomePage = () => {
             >
               <div className="relative mx-auto max-w-md lg:max-w-none">
                 <img 
-                  src="https://images.unsplash.com/photo-1694903089438-bf28d4697d9a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzV8MHwxfHNlYXJjaHw0fHxBSSUyMHRlY2hub2xvZ3l8ZW58MHx8fHwxNzU5OTM1Mzk5fDA&ixlib=rb-4.1.0&q=85"
+                  src="/images/hero-ai.svg"
                   alt="AI Technology"
                   className="rounded-2xl shadow-2xl"
                 />

@@ -48,20 +48,36 @@ CORTEXIFY is a sophisticated AI-powered chat platform designed for businesses an
 
 ### Installation
 
-1. **Install dependencies**
-   ```bash
-   cd frontend
-   npm install --legacy-peer-deps
-   ```
+1. **Backend setup**
+   - Create `backend/.env` with:
+     ```bash
+     AI_API_KEY=your_openai_api_key_here
+     OPENAI_MODEL=gpt-4o-mini
+     PORT=5000
+     CORS_ORIGIN=http://localhost:3000
+     ```
+   - Install and run backend:
+     ```bash
+     cd backend
+     npm install
+     npm run dev
+     ```
+   - Health check: open `http://localhost:5000/api/health`
 
-2. **Start Development Server**
-   ```bash
-   npm start
-   ```
+2. **Frontend setup**
+   - Create `frontend/.env` with:
+     ```bash
+     REACT_APP_BACKEND_URL=http://localhost:5000
+     ```
+   - Install and run frontend:
+     ```bash
+     cd frontend
+     npm install --legacy-peer-deps
+     npm start
+     ```
+   - Open `http://localhost:3000`
 
-   The app will open at `http://localhost:3000`
-
-3. **Build for Production**
+3. **Build for Production (frontend)**
    ```bash
    npm run build
    ```
@@ -89,10 +105,9 @@ CORTEXIFY is a sophisticated AI-powered chat platform designed for businesses an
 3. **Search**: Find specific conversations quickly
 4. **Folders**: Organize chats into custom folders
 
-### Export & Analytics
+### Analytics
 
-1. **Export Chat**: Download conversation history as JSON
-2. **View Analytics**: Track usage and token consumption
+- Track usage and token consumption (optional modules)
 
 ## Database Schema
 
@@ -127,3 +142,25 @@ All tables include Row Level Security policies to ensure data privacy.
 ---
 
 Built with modern web technologies for professional use.
+
+## Troubleshooting
+
+- **No AI responses after setting the API key**
+  - Ensure `backend/.env` exists and contains `AI_API_KEY`.
+  - Restart both servers after changing env files.
+  - Verify backend health at `http://localhost:5000/api/health`.
+  - Test streaming manually:
+    ```bash
+    curl -N -H "Content-Type: application/json" \
+      -d '{"history":[{"role":"user","content":"Hello"}]}' \
+      http://localhost:5000/api/chat
+    ```
+  - Check console logs for `Missing AI_API_KEY` or upstream errors.
+
+- **CORS errors**
+  - Confirm `CORS_ORIGIN=http://localhost:3000` in `backend/.env`.
+  - Confirm `REACT_APP_BACKEND_URL` in `frontend/.env` points to the backend.
+
+- **Environment changes not applied**
+  - Stop and re-run `npm start` (frontend) and `npm run dev` (backend).
+  - For Create React App, env variables are loaded at start time.

@@ -1,4 +1,6 @@
 import React from 'react';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Card, CardContent } from './ui/card';
@@ -43,11 +45,31 @@ const MessageBubble = ({ message, index }) => {
   };
 
   const formatTextContent = (text) => {
-    return text
+    // Render KaTeX for $$block$$ and $inline$ math
+    let html = text
+      .replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => {
+        try {
+          return katex.renderToString(expr, { throwOnError: false, displayMode: true });
+        } catch {
+          return `$$${expr}$$`;
+        }
+      })
+      .replace(/\$(.+?)\$/g, (_, expr) => {
+        try {
+          return katex.renderToString(expr, { throwOnError: false, displayMode: false });
+        } catch {
+          return `$${expr}$`;
+        }
+      });
+
+    // Basic Markdown-like formatting
+    html = html
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">$1</code>')
       .replace(/\n/g, '<br/>');
+
+    return html;
   };
 
   const messageParts = parseMessageContent(message.message);
