@@ -24,4 +24,5 @@ app.use('/api', chatRouter);
 
 app.listen(PORT, () => {
   console.log(`Cortexify Node backend listening on http://localhost:${PORT}`);
+  console.log('ENABLE_DEV_FALLBACK =', process.env.ENABLE_DEV_FALLBACK);
 });

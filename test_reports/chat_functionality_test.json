@@ -1,0 +1,30 @@
+{
+  "total": 4,
+  "passed": 2,
+  "failed": 2,
+  "successRate": 50,
+  "results": [
+    {
+      "test": "Health Endpoint",
+      "status": "PASS",
+      "details": {
+        "status": "ok"
+      }
+    },
+    {
+      "test": "Chat Endpoint",
+      "status": "FAIL",
+      "details": "Status: 500"
+    },
+    {
+      "test": "Streaming Response",
+      "status": "FAIL",
+      "details": "No tokens received"
+    },
+    {
+      "test": "Error Handling",
+      "status": "PASS",
+      "details": "Status: 500"
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "tech_stack": [
+    "JavaScript (ES6+)",
+    "React 19",
+    "Node.js",
+    "Express.js",
+    "Tailwind CSS",
+    "Radix UI Components",
+    "OpenAI API",
+    "Supabase",
+    "Framer Motion",
+    "Axios",
+    "EventSource Parser"
+  ],
+  "features": [
+    {
+      "name": "Chat API",
+      "description": "Real-time streaming chat with OpenAI integration",
+      "files": ["backend/routes/chat.js", "frontend/src/pages/ChatPage.js"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/api/chat": {
+            "post": {
+              "summary": "Send chat message and receive streaming response",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "messages": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "role": {"type": "string", "enum": ["user", "assistant"]},
+                              "content": {"type": "string"}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Streaming response",
+                  "content": {
+                    "text/event-stream": {
+                      "schema": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Health Check",
+      "description": "API health monitoring endpoint",
+      "files": ["backend/server.js"],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/api/health": {
+            "get": {
+              "summary": "Check API health status",
+              "responses": {
+                "200": {
+                  "description": "API is healthy",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": {"type": "string", "example": "ok"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Frontend Pages",
+      "description": "React-based UI pages with responsive design",
+      "files": [
+        "frontend/src/pages/HomePage.js",
+        "frontend/src/pages/ChatPage.js",
+        "frontend/src/pages/FeaturesPage.js",
+        "frontend/src/pages/AboutPage.js",
+        "frontend/src/pages/ContactPage.js"
+      ],
+      "api_doc": {}
+    },
+    {
+      "name": "Chat Session Management",
+      "description": "Local storage based chat session management",
+      "files": ["frontend/src/pages/ChatPage.js"],
+      "api_doc": {}
+    },
+    {
+      "name": "Error Handling",
+      "description": "Comprehensive error handling for API failures",
+      "files": ["backend/routes/chat.js", "frontend/src/pages/ChatPage.js"],
+      "api_doc": {}
+    }
+  ],
+  "known_issues": [
+    "Chat streaming response handling needs improvement",
+    "CORS configuration may need adjustment",
+    "Error handling for network timeouts",
+    "Message sanitization for special characters"
+  ]
+}

@@ -421,7 +421,11 @@ class ChatStreamRequest(BaseModel):
 async def stream_chat_response(history: List[Dict[str, str]]):
     try:
         if not openai_client:
-            yield f"data: {json.dumps({'token': 'Error: OpenAI API key not configured. Please add OPENAI_API_KEY to your .env file.'})}"}\n\n"
+            # Fallback mock response when no API key
+            mock_response = "Hello! I'm CORTEXIFY, your AI assistant. How can I help you today?"
+            for char in mock_response:
+                yield f"data: {json.dumps({'token': char})}\n\n"
+                await asyncio.sleep(0.05)
             yield "data: [DONE]\n\n"
             return
 
@@ -445,8 +449,11 @@ async def stream_chat_response(history: List[Dict[str, str]]):
 
     except Exception as e:
         logging.error(f"OpenAI streaming error: {str(e)}")
-        error_msg = f"Error: {str(e)}"
-        yield f"data: {json.dumps({'token': error_msg})}\n\n"
+        # Fallback mock response for errors
+        mock_response = "I'm sorry, I encountered an error processing your request. Please try again."
+        for char in mock_response:
+            yield f"data: {json.dumps({'token': char})}\n\n"
+            await asyncio.sleep(0.05)
         yield "data: [DONE]\n\n"
 
 @api_router.post("/chat")

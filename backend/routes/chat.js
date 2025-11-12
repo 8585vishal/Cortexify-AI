@@ -6,6 +6,7 @@ const router = express.Router();
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const ENABLE_DEV_FALLBACK = (process.env.ENABLE_DEV_FALLBACK || '').toLowerCase() === 'true';
 
 function sanitizeText(input) {
   try {
@@ -29,11 +30,46 @@ function buildMessages(body) {
   return [{ role: 'system', content: systemPrompt }, ...messages];
 }
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function streamFallback(res, messages) {
+  try {
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+    const reply = lastUser
+      ? `Mock response (fallback): You said: "${sanitizeText(lastUser)}"`
+      : 'Mock response (fallback): Hello from Cortexify. This is a dev fallback stream.';
+    const tokens = reply.split(/(\s+)/);
+    for (const tok of tokens) {
+      if (!tok) continue;
+      res.write(`data: ${JSON.stringify({ token: tok })}\n\n`);
+      await delay(10);
+    }
+    res.write(`data: [DONE]\n\n`);
+    res.end();
+  } catch (e) {
+    try {
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ message: 'Fallback stream error', detail: String(e) })}\n\n`);
+    } catch {}
+    res.end();
+  }
+}
+
 router.post('/chat', async (req, res) => {
   try {
-    const AI_API_KEY = process.env.AI_API_KEY;
+    const AI_API_KEY = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
     if (!AI_API_KEY) {
-      res.status(500).json({ error: 'Missing AI_API_KEY' });
+      if (ENABLE_DEV_FALLBACK) {
+        // Stream fallback when no API key available in dev mode
+        const messages = buildMessages(req.body);
+        // Prepare streaming headers if not set
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders?.();
+        await streamFallback(res, messages);
+        return;
+      }
+      res.status(500).json({ error: 'Missing OpenAI API key' });
       return;
     }
 
@@ -61,12 +97,18 @@ router.post('/chat', async (req, res) => {
 
     if (!response.ok || !response.body) {
       const text = await response.text();
+      if (ENABLE_DEV_FALLBACK) {
+        await streamFallback(res, messages);
+        return;
+      }
       res.write(`event: error\n`);
       res.write(`data: ${JSON.stringify({ message: 'Upstream error', detail: text })}\n\n`);
       res.end();
       return;
     }
 
+    let fallbackTrigger = false;
+    let errorPayload = '';
     const parser = createParser((event) => {
       if (event.type === 'event') {
         const data = event.data;
@@ -77,6 +119,11 @@ router.post('/chat', async (req, res) => {
         }
         try {
           const json = JSON.parse(data);
+          if (json?.error) {
+            fallbackTrigger = true;
+            errorPayload = JSON.stringify(json.error);
+            return;
+          }
           const delta = json?.choices?.[0]?.delta?.content;
           if (delta) {
             // Stream plain text tokens to the client as SSE data
@@ -91,6 +138,16 @@ router.post('/chat', async (req, res) => {
     for await (const chunk of response.body) {
       const str = Buffer.from(chunk).toString('utf8');
       parser.feed(str);
+      if (fallbackTrigger) {
+        if (ENABLE_DEV_FALLBACK) {
+          await streamFallback(res, messages);
+        } else {
+          res.write(`event: error\n`);
+          res.write(`data: ${JSON.stringify({ message: 'Upstream error (stream)', detail: errorPayload || 'unknown' })}\n\n`);
+          res.end();
+        }
+        return;
+      }
     }
   } catch (err) {
     console.error('Chat stream error:', err);
