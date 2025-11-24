@@ -1,0 +1,32 @@
+@layer base {
+  html { scroll-behavior: smooth; }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height);
+    background: var(--background);
+    color: var(--foreground);
+  }
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 60%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+}
+
+@layer utilities {
+  .container { max-width: 1200px; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }
+  .card { background: var(--popover); color: var(--popover-foreground); border: 1px solid var(--border); border-radius: var(--radius-12); box-shadow: var(--shadow-sm); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: var(--radius-6); padding: .5rem .875rem; font-weight: 600; transition: transform .12s ease, box-shadow .12s ease; }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--primary); color: var(--primary-foreground); }
+  .btn-outline { border: 1px solid var(--border); background: transparent; color: var(--foreground); }
+  .input { width: 100%; border: 1px solid var(--input); border-radius: var(--radius-6); padding: .5rem .75rem; background: transparent; color: var(--foreground); }
+  .badge { display: inline-flex; align-items: center; gap: .375rem; border-radius: 9999px; border: 1px solid var(--border); padding: .125rem .5rem; font-size: .75rem; }
+  .table { width: 100%; border-collapse: collapse; }
+  .table th, .table td { border-bottom: 1px solid var(--border); padding: .75rem; text-align: left; }
+}

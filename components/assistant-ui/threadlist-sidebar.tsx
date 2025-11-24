@@ -1,5 +1,6 @@
+"use client";
 import * as React from "react";
-import { Github, MessagesSquare } from "lucide-react";
+import { MessagesSquare, LogOut } from "lucide-react";
 import Link from "next/link";
 import {
   Sidebar,
@@ -16,6 +17,21 @@ import { ThreadList } from "@/components/assistant-ui/thread-list";
 export function ThreadListSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
+  const [email, setEmail] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(async (r) => (r.ok ? r.json() : null))
+      .then((d) => setEmail(d?.email ?? null))
+      .catch(() => setEmail(null));
+  }, []);
+
+  async function onLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include", keepalive: true });
+    } finally {
+      window.location.href = "/auth/login";
+    }
+  }
   return (
     <Sidebar {...props}>
       <SidebarHeader className="aui-sidebar-header mb-2 border-b">
@@ -47,27 +63,17 @@ export function ThreadListSidebar({
       </SidebarContent>
       <SidebarRail />
       <SidebarFooter className="aui-sidebar-footer border-t">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link
-                href="https://github.com/assistant-ui/assistant-ui"
-                target="_blank"
-              >
-                <div className="aui-sidebar-footer-icon-wrapper flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Github className="aui-sidebar-footer-icon size-4" />
-                </div>
-                <div className="aui-sidebar-footer-heading flex flex-col gap-0.5 leading-none">
-                  <span className="aui-sidebar-footer-title font-semibold">
-                    GitHub
-                  </span>
-                  <span>View Source</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex items-center gap-3 px-3 py-3">
+          <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <span className="text-sm">{email ? email[0]?.toUpperCase() : "?"}</span>
+          </div>
+          <div className="text-sm leading-tight">
+            <div className="font-semibold">Profile</div>
+            <div className="text-muted-foreground">{email ?? "Guest"}</div>
+          </div>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
 }
+import { Button } from "@/components/ui/button";
