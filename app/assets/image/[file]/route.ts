@@ -13,5 +13,5 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ file: 
   const buf = await readFile(p).catch(() => null);
   if (!buf) return new NextResponse("Not found", { status: 404 });
   const ct = name.endsWith(".webp") ? "image/webp" : name.endsWith(".jpg") ? "image/jpeg" : "application/octet-stream";
-  return new NextResponse(buf, { headers: { "Content-Type": ct, "Cache-Control": "public, max-age=3600" } });
+  return new NextResponse(buf as any, { headers: { "Content-Type": ct, "Cache-Control": "public, max-age=3600" } });
 }
