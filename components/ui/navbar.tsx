@@ -16,10 +16,7 @@ export function NavBar() {
           <Link href="/about" className="text-sm opacity-90 hover:opacity-100">About</Link>
           <Link href="/features" className="text-sm opacity-90 hover:opacity-100">Features</Link>
           <Link href="/pricing" className="text-sm opacity-90 hover:opacity-100">Pricing</Link>
-          <Link href="/api" className="text-sm opacity-90 hover:opacity-100">API</Link>
-          <Link href="/documentation" className="text-sm opacity-90 hover:opacity-100">Docs</Link>
-          <Link href="/status" className="text-sm opacity-90 hover:opacity-100">Status</Link>
-          <Link href="/support" className="text-sm opacity-90 hover:opacity-100">Support</Link>
+
           <Link href="/contact" className="text-sm opacity-90 hover:opacity-100">Contact</Link>
         </nav>
         <div className="flex items-center gap-3">
