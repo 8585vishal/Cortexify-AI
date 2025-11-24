@@ -4,44 +4,43 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 
+// Allowed image filenames
 const ALLOWED_FILES = new Set(["01.webp", "02.webp", "03.jpg"]);
 
-export async function GET(
-  _req: NextRequest,
-  context: { params: { file: string } }
-) {
-  const fileName = decodeURIComponent(context.params.file);
+// Root directory for images
+const IMAGE_DIR = "C:/Users/visha/Desktop/Cortexify-AI/images";
 
-  // Validate allowed list
+export async function GET(_req: NextRequest, { params }: { params: { file: string } }) {
+  const fileName = decodeURIComponent(params.file);
+
+  // Validate allowed file list
   if (!ALLOWED_FILES.has(fileName)) {
     return new NextResponse("Not found", { status: 404 });
   }
 
-  // Local folder path
-  const filePath = path.resolve(
-    "C:/Users/visha/Desktop/Cortexify-AI/images",
-    fileName
-  );
+  // Build absolute image path
+  const filePath = path.resolve(IMAGE_DIR, fileName);
 
-  let buffer: Buffer;
-
+  // Read file safely
+  let fileBuffer: Buffer;
   try {
-    buffer = await readFile(filePath);
+    fileBuffer = await readFile(filePath);
   } catch {
     return new NextResponse("Not found", { status: 404 });
   }
 
-  // Content type
-  const contentType = fileName.endsWith(".webp")
-    ? "image/webp"
-    : fileName.endsWith(".jpg")
-    ? "image/jpeg"
-    : "application/octet-stream";
+  // Detect content type
+  const contentType =
+    fileName.endsWith(".webp") ? "image/webp" :
+    fileName.endsWith(".jpg")  ? "image/jpeg" :
+    "application/octet-stream";
 
-  return new NextResponse(buffer, {
+  // Return the image
+  return new NextResponse(fileBuffer, {
     headers: {
       "Content-Type": contentType,
       "Cache-Control": "public, max-age=3600",
     },
   });
 }
+
