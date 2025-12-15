@@ -1,0 +1,7 @@
+{
+  "name": "CORTEXIFY",
+  "description": "A fully functional, production-grade ChatGPT replica web application named 'CORTEXIFY', featuring user authentication, AI-powered chat, and professional UI/UX.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
