@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Header from '../components/landing/Header';
 import Sidebar from '../components/layout/Sidebar';
 import ChatArea from '../components/chat/ChatArea';
 import { ChatSession, Message, ChatSettings } from '../types';
@@ -9,7 +10,6 @@ import UserProfileModal from '../components/chat/UserProfileModal';
 import AssumptionModeModal from '../components/chat/AssumptionModeModal';
 import HelpModal from '../components/chat/HelpModal';
 import { MODEL_NAME } from '../services/geminiService';
-// Removed global Header import to prevent double-header layout issues
 
 const DEFAULT_SETTINGS: ChatSettings = {
     temperature: 0.7,
@@ -25,9 +25,6 @@ const ChatPage: React.FC = () => {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isFeatureModalOpen, setIsFeatureModalOpen] = useState(false);
     const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-    
-    // State to control mobile sidebar visibility
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const userSessionsKey = user ? `cortexify-chat-sessions-${user.id}` : null;
     const userSettingsKey = user ? `cortexify-chat-settings-${user.id}` : null;
@@ -91,14 +88,10 @@ const ChatPage: React.FC = () => {
         };
         setSessions(prev => [newSession, ...prev]);
         setActiveSessionId(newSession.id);
-        // Close sidebar on mobile when creating new chat
-        setIsSidebarOpen(false);
     };
 
     const selectSession = (session: ChatSession) => {
         setActiveSessionId(session.id);
-        // Close sidebar on mobile when selecting a session
-        setIsSidebarOpen(false);
     };
     
     const handleSaveSettings = (newSettings: ChatSettings) => {
@@ -135,18 +128,10 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        // Use 100dvh to handle mobile browser address bars correctly
-        <div className="flex flex-col h-[100dvh] font-sans bg-white dark:bg-gray-900 text-black dark:text-white overflow-hidden relative">
+        <div className="flex flex-col h-screen font-sans bg-white dark:bg-gray-900 text-black dark:text-white overflow-hidden relative">
+            <Header onOpenProfile={() => setIsProfileModalOpen(true)} />
             
-            <div className="flex flex-1 h-full overflow-hidden relative">
-                {/* Mobile Backdrop Overlay - High Z-index but lower than sidebar */}
-                {isSidebarOpen && (
-                    <div 
-                        className="absolute inset-0 z-40 bg-black/50 md:hidden backdrop-blur-sm transition-opacity"
-                        onClick={() => setIsSidebarOpen(false)}
-                    />
-                )}
-
+            <div className="flex flex-1 h-full overflow-hidden pt-16 relative">
                 <Sidebar 
                     sessions={sessions} 
                     onNewChat={handleNewChat} 
@@ -154,8 +139,6 @@ const ChatPage: React.FC = () => {
                     activeSessionId={activeSessionId || undefined}
                     onRenameSession={handleRenameSession}
                     onDeleteSession={handleDeleteSession}
-                    isOpen={isSidebarOpen}
-                    onClose={() => setIsSidebarOpen(false)}
                     onOpenProfile={() => setIsProfileModalOpen(true)}
                     onOpenSettings={() => setIsSettingsModalOpen(true)}
                     onOpenHelp={() => setIsHelpModalOpen(true)}
@@ -171,7 +154,6 @@ const ChatPage: React.FC = () => {
                         modelName={MODEL_NAME}
                         onRenameSession={handleRenameSession}
                         onNewChat={handleNewChat}
-                        onShowSidebar={() => setIsSidebarOpen(true)}
                     />
                 </main>
             </div>

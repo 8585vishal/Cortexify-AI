@@ -5,7 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { ChatSession } from '../../types';
 import { 
     PlusIcon, MessageSquareIcon, LogOutIcon, 
-    PencilIcon, TrashIcon, SearchIcon, XIcon, UserIcon, 
+    PencilIcon, TrashIcon, SearchIcon, UserIcon, 
     SettingsIcon, HelpCircleIcon, PaletteIcon, SunIcon, MoonIcon
 } from '../common/Icons';
 import Modal from '../common/Modal';
@@ -19,16 +19,14 @@ interface SidebarProps {
   onRenameSession: (sessionId: string, newTitle: string) => void;
   onDeleteSession: (sessionId: string) => void;
   activeSessionId?: string;
-  isOpen: boolean; // Controls mobile visibility
-  onClose: () => void; // Close sidebar on mobile
-  onOpenProfile: () => void; // Callback to open profile modal
-  onOpenSettings: () => void; // Callback to open settings modal
-  onOpenHelp: () => void; // Callback to open help modal
+  onOpenProfile: () => void;
+  onOpenSettings: () => void;
+  onOpenHelp: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
     sessions, onNewChat, onSelectSession, onRenameSession, onDeleteSession, 
-    activeSessionId, isOpen, onClose, onOpenProfile, onOpenSettings, onOpenHelp 
+    activeSessionId, onOpenProfile, onOpenSettings, onOpenHelp 
 }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -106,34 +104,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-    <aside 
-      className={`
-        bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
-        w-64 flex flex-col p-4 z-50
-        fixed top-0 bottom-0 left-0 md:static md:h-full md:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}
-    >
+    <aside className="w-64 flex flex-col p-4 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 hidden md:flex">
       {/* Brand & Toggle */}
-      <div className="flex items-center justify-between mb-6 px-2 pt-1 md:pt-0">
+      <div className="flex items-center justify-between mb-6 px-2">
         <Logo className="scale-90 origin-left" textSize="text-xl" />
-        <div className="flex items-center space-x-2">
-            <button
-                onClick={toggleTheme}
-                className="p-2 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 rounded-full transition-colors"
-                title="Toggle Theme"
-            >
-                {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-            </button>
-            {/* Close button strictly for Mobile */}
-            <button 
-                onClick={onClose} 
-                className="md:hidden p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full"
-                title="Close Sidebar"
-            >
-                <XIcon className="w-6 h-6" />
-            </button>
-        </div>
+        <button
+            onClick={toggleTheme}
+            className="p-2 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 rounded-full transition-colors"
+            title="Toggle Theme"
+        >
+            {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+        </button>
       </div>
       
       <button

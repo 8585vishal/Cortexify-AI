@@ -6,7 +6,7 @@ import ChatMessage from './ChatMessage';
 import ChatInput, { Attachment } from './ChatInput';
 import TypingIndicator from './TypingIndicator';
 import { generateResponseStream, editContentStream, generateChatTitle, PRO_MODEL_NAME } from '../../services/geminiService';
-import { SettingsIcon, DownloadIcon, MenuIcon } from '../common/Icons';
+import { SettingsIcon, DownloadIcon } from '../common/Icons';
 import ChatWelcome from './ChatWelcome';
 
 type EditAction = 'shorter' | 'longer' | 'explain';
@@ -19,10 +19,9 @@ interface ChatAreaProps {
   modelName: string;
   onRenameSession: (sessionId: string, newTitle: string) => void;
   onNewChat: () => void;
-  onShowSidebar: () => void;
 }
 
-const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate, onOpenSettings, modelName, onRenameSession, onNewChat, onShowSidebar }) => {
+const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate, onOpenSettings, modelName, onRenameSession, onNewChat }) => {
   const [messages, setMessages] = useState<Message[]>(session?.messages || []);
   const [isLoading, setIsLoading] = useState(false);
   const [isThinkingMode, setIsThinkingMode] = useState(false);
@@ -229,12 +228,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate
     <div className="flex flex-col h-full relative">
       <header className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 sticky top-0">
         <div className="flex items-center">
-            <button 
-                onClick={onShowSidebar}
-                className="mr-3 md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
-            >
-                <MenuIcon className="w-6 h-6" />
-            </button>
             <h2 className="text-lg font-semibold truncate max-w-[150px] sm:max-w-md">{session.title}</h2>
         </div>
         <div className="flex items-center space-x-2">
