@@ -10,6 +10,7 @@ type AuthState = 'login' | 'signup' | 'otp';
 const AuthPage: React.FC = () => {
   const [authState, setAuthState] = useState<AuthState>('login');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -23,34 +24,53 @@ const AuthPage: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError(null); // Clear error when user types
+  };
+
+  const switchState = (newState: AuthState) => {
+      setAuthState(newState);
+      setError(null);
+      setFormData(prev => ({ ...prev, otp: '' })); // Keep email/pass mostly, clear OTP
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!formData.email || !formData.password) return;
     
     setIsLoading(true);
     const success = await login(formData.email, formData.password);
     if (success) {
       navigate('/chat');
+    } else {
+        setError("Invalid email or password. Please try again.");
     }
     setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!formData.username || !formData.email || !formData.password) return;
+
+    if (formData.password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
+    }
 
     setIsLoading(true);
     const success = await signup(formData.username, formData.email, formData.password);
     if (success) {
       setAuthState('otp');
+    } else {
+        setError("Account already exists with this email.");
     }
     setIsLoading(false);
   };
 
   const handleOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!formData.otp) return;
 
     setIsLoading(true);
@@ -61,7 +81,7 @@ const AuthPage: React.FC = () => {
       setFormData(prev => ({ ...prev, password: '', otp: '' }));
       alert("Verification successful! Please login.");
     } else {
-        alert("Invalid OTP");
+        setError("Invalid OTP. Please try again.");
     }
     setIsLoading(false);
   };
@@ -79,6 +99,17 @@ const AuthPage: React.FC = () => {
           <Logo className="justify-center" />
           <p className="mt-2 text-gray-600 dark:text-gray-400">Welcome to the future of conversation</p>
         </div>
+        
+        {error && (
+            <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 text-sm text-center text-red-600 bg-red-100 rounded-lg dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
+            >
+                {error}
+            </motion.div>
+        )}
+
         <AnimatePresence mode="wait">
           {authState === 'login' && (
             <motion.form key="login" variants={formVariants} initial="hidden" animate="visible" exit="exit" onSubmit={handleLogin} className="space-y-6">
@@ -111,7 +142,7 @@ const AuthPage: React.FC = () => {
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </button>
               <p className="text-sm text-center text-gray-600 dark:text-gray-400">
-                Don't have an account? <button type="button" onClick={() => setAuthState('signup')} className="font-medium text-purple-500 hover:underline">Sign Up</button>
+                Don't have an account? <button type="button" onClick={() => switchState('signup')} className="font-medium text-purple-500 hover:underline">Sign Up</button>
               </p>
             </motion.form>
           )}
@@ -158,7 +189,7 @@ const AuthPage: React.FC = () => {
                  {isLoading ? 'Creating account...' : 'Create Account'}
                </button>
                <p className="text-sm text-center text-gray-600 dark:text-gray-400">
-                 Already have an account? <button type="button" onClick={() => setAuthState('login')} className="font-medium text-purple-500 hover:underline">Sign In</button>
+                 Already have an account? <button type="button" onClick={() => switchState('login')} className="font-medium text-purple-500 hover:underline">Sign In</button>
                </p>
              </motion.form>
            )}
@@ -184,6 +215,9 @@ const AuthPage: React.FC = () => {
                 <button disabled={isLoading} type="submit" className="w-full py-2 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-purple-400 transition-all duration-300">
                 {isLoading ? 'Verifying...' : 'Verify'}
                 </button>
+                <p className="text-sm text-center text-gray-600 dark:text-gray-400">
+                    <button type="button" onClick={() => switchState('signup')} className="font-medium text-purple-500 hover:underline">Back to Signup</button>
+                </p>
             </motion.form>
            )}
         </AnimatePresence>
