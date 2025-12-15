@@ -11,6 +11,7 @@ const AuthPage: React.FC = () => {
   const [authState, setAuthState] = useState<AuthState>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -24,34 +25,45 @@ const AuthPage: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (error) setError(null); // Clear error when user types
+    if (error) setError(null);
   };
 
   const switchState = (newState: AuthState) => {
       setAuthState(newState);
       setError(null);
-      setFormData(prev => ({ ...prev, otp: '' })); // Keep email/pass mostly, clear OTP
+      setSuccessMsg(null);
+      // Reset sensitive fields when switching modes
+      setFormData(prev => ({ ...prev, password: '', otp: '' }));
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!formData.email || !formData.password) return;
+    setSuccessMsg(null);
+    
+    if (!formData.email || !formData.password) {
+        setError("Please enter both email and password.");
+        return;
+    }
     
     setIsLoading(true);
     const success = await login(formData.email, formData.password);
+    setIsLoading(false);
+    
     if (success) {
       navigate('/chat');
     } else {
         setError("Invalid email or password. Please try again.");
     }
-    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!formData.username || !formData.email || !formData.password) return;
+    if (!formData.username || !formData.email || !formData.password) {
+        setError("All fields are required.");
+        return;
+    }
 
     if (formData.password.length < 6) {
         setError("Password must be at least 6 characters long.");
@@ -60,12 +72,14 @@ const AuthPage: React.FC = () => {
 
     setIsLoading(true);
     const success = await signup(formData.username, formData.email, formData.password);
+    setIsLoading(false);
+    
     if (success) {
       setAuthState('otp');
+      setSuccessMsg("Account created! Check your email for the code.");
     } else {
         setError("Account already exists with this email.");
     }
-    setIsLoading(false);
   };
 
   const handleOtp = async (e: React.FormEvent) => {
@@ -75,15 +89,16 @@ const AuthPage: React.FC = () => {
 
     setIsLoading(true);
     const success = await verifyOtp(formData.otp);
+    setIsLoading(false);
+    
     if (success) {
       setAuthState('login');
-      // Clear password for security, keep email for convenience
+      // IMPORTANT: Clear password field to force user to re-enter it for login, ensuring they know it.
       setFormData(prev => ({ ...prev, password: '', otp: '' }));
-      alert("Verification successful! Please login.");
+      setSuccessMsg("Verification successful! Please log in with your credentials.");
     } else {
-        setError("Invalid OTP. Please try again.");
+        setError("Invalid OTP. Please try '123456'.");
     }
-    setIsLoading(false);
   };
 
   const formVariants = {
@@ -94,7 +109,10 @@ const AuthPage: React.FC = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 font-sans">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl relative overflow-hidden">
+        {/* Background Accent */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+        
         <div className="text-center">
           <Logo className="justify-center" />
           <p className="mt-2 text-gray-600 dark:text-gray-400">Welcome to the future of conversation</p>
@@ -109,6 +127,16 @@ const AuthPage: React.FC = () => {
                 {error}
             </motion.div>
         )}
+        
+        {successMsg && !error && (
+            <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 text-sm text-center text-green-600 bg-green-100 rounded-lg dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800"
+            >
+                {successMsg}
+            </motion.div>
+        )}
 
         <AnimatePresence mode="wait">
           {authState === 'login' && (
@@ -119,10 +147,11 @@ const AuthPage: React.FC = () => {
                 <input 
                     type="email" 
                     name="email"
+                    autoComplete="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     required 
-                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" 
                     placeholder="you@example.com" 
                 />
               </div>
@@ -131,14 +160,15 @@ const AuthPage: React.FC = () => {
                 <input 
                     type="password" 
                     name="password"
+                    autoComplete="current-password"
                     value={formData.password}
                     onChange={handleInputChange}
                     required 
-                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" 
                     placeholder="********" 
                 />
               </div>
-              <button disabled={isLoading} type="submit" className="w-full py-2 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-purple-400 transition-all duration-300">
+              <button disabled={isLoading} type="submit" className="w-full py-2.5 font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:bg-purple-400 transition-all duration-300 shadow-lg shadow-purple-500/20">
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </button>
               <p className="text-sm text-center text-gray-600 dark:text-gray-400">
@@ -154,10 +184,11 @@ const AuthPage: React.FC = () => {
                 <input 
                     type="text" 
                     name="username"
+                    autoComplete="username"
                     value={formData.username}
                     onChange={handleInputChange}
                     required 
-                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" 
                     placeholder="your_username" 
                 />
               </div>
@@ -166,10 +197,11 @@ const AuthPage: React.FC = () => {
                  <input 
                     type="email" 
                     name="email"
+                    autoComplete="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     required 
-                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" 
                     placeholder="you@example.com" 
                 />
                </div>
@@ -178,14 +210,15 @@ const AuthPage: React.FC = () => {
                  <input 
                     type="password" 
                     name="password"
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={handleInputChange}
                     required 
-                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                    className="w-full px-3 py-2 mt-1 text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" 
                     placeholder="********" 
                 />
                </div>
-               <button disabled={isLoading} type="submit" className="w-full py-2 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-purple-400 transition-all duration-300">
+               <button disabled={isLoading} type="submit" className="w-full py-2.5 font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:bg-purple-400 transition-all duration-300 shadow-lg shadow-purple-500/20">
                  {isLoading ? 'Creating account...' : 'Create Account'}
                </button>
                <p className="text-sm text-center text-gray-600 dark:text-gray-400">
@@ -208,11 +241,12 @@ const AuthPage: React.FC = () => {
                     onChange={handleInputChange}
                     maxLength={6} 
                     required 
-                    className="w-full px-3 py-2 mt-1 text-center tracking-[1em] text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                    autoComplete="one-time-code"
+                    className="w-full px-3 py-2 mt-1 text-center tracking-[1em] text-gray-900 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" 
                     placeholder="123456" 
                 />
                 </div>
-                <button disabled={isLoading} type="submit" className="w-full py-2 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-purple-400 transition-all duration-300">
+                <button disabled={isLoading} type="submit" className="w-full py-2.5 font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:bg-purple-400 transition-all duration-300 shadow-lg shadow-purple-500/20">
                 {isLoading ? 'Verifying...' : 'Verify'}
                 </button>
                 <p className="text-sm text-center text-gray-600 dark:text-gray-400">
