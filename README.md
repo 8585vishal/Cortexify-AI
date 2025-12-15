@@ -1,20 +1,23 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+🧠 Cortexify — Intelligent Data-Driven AI Platform
 
-# Run and deploy your AI Studio app
+🚀 Cortexify is a smart, AI-powered platform designed to analyze uploaded data and transform it into meaningful insights.
+Instead of generic responses, Cortexify focuses on contextual understanding, structured reasoning, and real-world usability.
 
-This contains everything you need to run your app locally.
+📂 Users can upload data (documents, inputs, or structured information), and Cortexify processes it intelligently to deliver accurate, relevant, and actionable outputs.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1XR76NRTp6EpP6CsruYapaGwb9MRT8MhF
+✨ Key Highlights
 
-## Run Locally
+📊 Data Upload & Processing — Upload data and let the system extract insights
+🧠 Context-Aware Intelligence — Understands intent, not just prompts
+⚡ Fast & Efficient Analysis — Optimized for clarity and performance
+🎯 Purpose-Driven Outputs — Focused on solutions, not conversations
+🧩 Scalable Design — Built for future expansion and real-world use cases
 
-**Prerequisites:**  Node.js
+🛠️ Why Cortexify?
 
+Unlike traditional AI tools, Cortexify is built to think with your data.
+It acts as a cognitive processing layer, turning raw uploads into structured intelligence that supports better decisions and productivity.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+🔮 Vision
+
+💡 To create an AI system that understands data, context, and purpose — helping users move from information to insight with confidence.
