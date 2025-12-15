@@ -109,32 +109,36 @@ const Sidebar: React.FC<SidebarProps> = ({
     <aside 
       className={`
         bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
-        w-64 flex flex-col p-4 z-40
-        fixed top-0 bottom-0 left-0 md:static md:h-full md:translate-x-0 transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+        w-64 flex flex-col p-4 z-50
+        fixed top-0 bottom-0 left-0 md:static md:h-full md:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
     >
-      {/* Mobile Close Button */}
-      <div className="flex md:hidden justify-end mb-2">
-         <button onClick={onClose} className="p-1 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
-            <XIcon className="w-6 h-6" />
-         </button>
-      </div>
-
       {/* Brand & Toggle */}
-      <div className="flex items-center justify-between mb-6 px-2">
+      <div className="flex items-center justify-between mb-6 px-2 pt-1 md:pt-0">
         <Logo className="scale-90 origin-left" textSize="text-xl" />
-        <button
-            onClick={toggleTheme}
-            className="p-2 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 rounded-full transition-colors"
-        >
-            {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center space-x-2">
+            <button
+                onClick={toggleTheme}
+                className="p-2 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 rounded-full transition-colors"
+                title="Toggle Theme"
+            >
+                {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+            </button>
+            {/* Close button strictly for Mobile */}
+            <button 
+                onClick={onClose} 
+                className="md:hidden p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full"
+                title="Close Sidebar"
+            >
+                <XIcon className="w-6 h-6" />
+            </button>
+        </div>
       </div>
       
       <button
           onClick={onNewChat}
-          className="w-full flex items-center justify-center px-4 py-2 mb-4 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+          className="w-full flex items-center justify-center px-4 py-3 mb-4 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
       >
           <PlusIcon className="w-5 h-5 mr-2" />
           New Chat
@@ -153,9 +157,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <h2 className="text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase mb-2">
-          Past Conversations
+      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <h2 className="text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase mb-2 ml-1">
+          Recent
         </h2>
         <nav className="space-y-1">
           {filteredSessions.map((session) => (

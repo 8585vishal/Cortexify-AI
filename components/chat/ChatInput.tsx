@@ -244,7 +244,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, isThink
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isListening ? 'Listening...' : (attachment ? "Ask something about this file..." : "Type your message here...")}
-            className="flex-1 px-2 py-2 bg-transparent resize-none focus:outline-none max-h-40 placeholder-gray-500 dark:placeholder-gray-500 text-gray-900 dark:text-white"
+            className="flex-1 px-2 py-2 bg-transparent resize-none focus:outline-none max-h-40 placeholder-gray-500 dark:placeholder-gray-500 text-gray-900 dark:text-white text-base"
             rows={1}
             disabled={isLoading}
         />
