@@ -32,7 +32,7 @@ const About: React.FC = () => {
                         <img 
                             src="https://drive.google.com/file/d/1xX_sP-5XQthPlA22fOB7BmDTiNmWRss5/view?usp=sharing" 
                             alt="" 
-                            className="w-full h-full object-cover" 
+                            className="" 
                         />
                     </div>
                     {/* Floating Status Badge */}
