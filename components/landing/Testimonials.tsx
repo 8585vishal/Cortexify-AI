@@ -25,15 +25,15 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({ quote, name, role, av
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.5, delay }}
-        className="bg-gradient-to-b from-gray-800/60 to-gray-900/60 p-8 rounded-2xl border border-gray-700/50 hover:border-teal-500/30 flex flex-col h-full backdrop-blur-sm"
+        className="bg-white dark:bg-gradient-to-b dark:from-gray-800/60 dark:to-gray-900/60 p-8 rounded-2xl border border-gray-200 dark:border-gray-700/50 hover:border-teal-500/30 flex flex-col h-full backdrop-blur-sm shadow-sm dark:shadow-none"
     >
         <Rating />
-        <blockquote className="text-gray-300 text-lg leading-relaxed flex-grow mb-6 italic">"{quote}"</blockquote>
-        <div className="flex items-center pt-6 border-t border-gray-700/50">
-            <img className="w-12 h-12 rounded-full mr-4 border-2 border-gray-700 object-cover" src={avatar} alt={name} />
+        <blockquote className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed flex-grow mb-6 italic">"{quote}"</blockquote>
+        <div className="flex items-center pt-6 border-t border-gray-200 dark:border-gray-700/50">
+            <img className="w-12 h-12 rounded-full mr-4 border-2 border-gray-200 dark:border-gray-700 object-cover" src={avatar} alt={name} />
             <div>
-                <p className="font-bold text-white">{name}</p>
-                <p className="text-xs text-teal-400 font-medium uppercase tracking-wide">{role}</p>
+                <p className="font-bold text-gray-900 dark:text-white">{name}</p>
+                <p className="text-xs text-teal-600 dark:text-teal-400 font-medium uppercase tracking-wide">{role}</p>
             </div>
         </div>
     </motion.div>
@@ -62,8 +62,8 @@ const Testimonials: React.FC = () => {
     ];
 
     return (
-        <section id="testimonials" className="py-24 md:py-32 bg-gray-900 relative">
-             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-teal-900/10 via-gray-900 to-gray-900 pointer-events-none" />
+        <section id="testimonials" className="py-24 md:py-32 bg-gray-50 dark:bg-gray-900 relative transition-colors duration-300">
+             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-teal-100/40 via-gray-50 to-gray-50 dark:from-teal-900/10 dark:via-gray-900 dark:to-gray-900 pointer-events-none" />
             
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <motion.div 
@@ -72,11 +72,11 @@ const Testimonials: React.FC = () => {
                     viewport={{ once: true }}
                     className="text-center max-w-3xl mx-auto mb-16"
                 >
-                    <span className="inline-block px-3 py-1 text-xs font-bold text-teal-300 bg-teal-900/30 rounded-full mb-6 border border-teal-500/20 tracking-wider uppercase">
+                    <span className="inline-block px-3 py-1 text-xs font-bold text-teal-600 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/30 rounded-full mb-6 border border-teal-500/20 tracking-wider uppercase">
                         Testimonials
                     </span>
-                    <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6 text-white">What Our Users Say</h2>
-                    <p className="text-lg text-gray-400">Join a community of professionals who trust CORTEXIFY.</p>
+                    <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6 text-gray-900 dark:text-white">What Our Users Say</h2>
+                    <p className="text-lg text-gray-600 dark:text-gray-400">Join a community of professionals who trust CORTEXIFY.</p>
                 </motion.div>
                 
                 <div className="grid md:grid-cols-3 gap-8">

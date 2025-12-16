@@ -62,17 +62,17 @@ const Stats: React.FC = () => {
     
     const IconComponent = ({ iconName }: { iconName: string }) => {
         switch(iconName) {
-            case 'user': return <UserIcon className="w-8 h-8 text-teal-400" />;
-            case 'chat': return <MessageSquareIcon className="w-8 h-8 text-teal-400" />;
-            case 'time': return <BoltIcon className="w-8 h-8 text-teal-400" />;
-            case 'graph': return <StarIcon className="w-8 h-8 text-teal-400" />;
+            case 'user': return <UserIcon className="w-8 h-8 text-teal-500 dark:text-teal-400" />;
+            case 'chat': return <MessageSquareIcon className="w-8 h-8 text-teal-500 dark:text-teal-400" />;
+            case 'time': return <BoltIcon className="w-8 h-8 text-teal-500 dark:text-teal-400" />;
+            case 'graph': return <StarIcon className="w-8 h-8 text-teal-500 dark:text-teal-400" />;
             default: return null;
         }
     };
 
     return (
-        <section className="py-20 bg-gray-900 border-y border-gray-800 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gray-800/10" />
+        <section className="py-20 bg-white dark:bg-gray-900 border-y border-gray-200 dark:border-gray-800 relative overflow-hidden transition-colors duration-300">
+            <div className="absolute inset-0 bg-gray-50/50 dark:bg-gray-800/10 pointer-events-none" />
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
                     {stats.map((stat, index) => (
@@ -85,14 +85,14 @@ const Stats: React.FC = () => {
                             transition={{ duration: 0.5, delay: index * 0.1 }}
                         >
                             <div className="flex justify-center items-center mb-4 transform transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-1">
-                                <div className="p-3 bg-gray-800 rounded-full border border-gray-700 shadow-lg group-hover:border-teal-500/50 group-hover:shadow-[0_0_15px_rgba(45,212,191,0.2)]">
+                                <div className="p-3 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-lg group-hover:border-teal-500/50 group-hover:shadow-[0_0_15px_rgba(45,212,191,0.2)]">
                                     <IconComponent iconName={stat.icon} />
                                 </div>
                             </div>
-                            <p className="text-3xl lg:text-4xl font-extrabold text-white mb-1 tracking-tight">
+                            <p className="text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white mb-1 tracking-tight">
                                 <AnimatedCounter value={stat.value} />
                             </p>
-                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{stat.name}</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{stat.name}</p>
                         </motion.div>
                     ))}
                 </div>

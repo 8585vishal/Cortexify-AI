@@ -2,11 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { User } from '../types';
 import Logo from '../components/common/Logo';
+import { SunIcon, MoonIcon } from '../components/common/Icons';
 
 const ProfilePage: React.FC = () => {
   const { user, updateUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ username: '', email: '' });
@@ -61,8 +64,17 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 font-sans">
-      <div className="w-full max-w-2xl p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 font-sans relative">
+      {/* Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 p-2 rounded-full text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors z-10"
+        aria-label="Toggle theme"
+      >
+        {theme === 'dark' ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
+      </button>
+
+      <div className="w-full max-w-2xl p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl relative z-0">
         <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">User Profile</h1>
             <Logo />

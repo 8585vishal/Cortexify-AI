@@ -16,13 +16,13 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, description, del
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.5, delay }}
-        className="bg-gray-800/40 p-8 rounded-2xl border border-gray-700/50 hover:border-teal-500/40 hover:bg-gray-800/80 transition-all duration-300 group hover:shadow-xl hover:-translate-y-1"
+        className="bg-gray-50 dark:bg-gray-800/40 p-8 rounded-2xl border border-gray-200 dark:border-gray-700/50 hover:border-teal-500/40 hover:bg-white dark:hover:bg-gray-800/80 transition-all duration-300 group hover:shadow-xl hover:-translate-y-1"
     >
-        <div className="flex items-center justify-center h-14 w-14 rounded-xl bg-teal-900/30 text-teal-400 mb-6 group-hover:bg-teal-500/20 group-hover:scale-110 transition-all duration-300">
+        <div className="flex items-center justify-center h-14 w-14 rounded-xl bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 mb-6 group-hover:bg-teal-200 dark:group-hover:bg-teal-500/20 group-hover:scale-110 transition-all duration-300">
             {icon}
         </div>
-        <h3 className="text-xl font-bold mb-3 text-white group-hover:text-teal-300 transition-colors">{title}</h3>
-        <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
+        <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-300 transition-colors">{title}</h3>
+        <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{description}</p>
     </motion.div>
 );
 
@@ -52,8 +52,8 @@ const Features: React.FC = () => {
   ];
 
   return (
-    <section id="features" className="py-24 md:py-32 bg-gray-900 relative">
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent opacity-50"></div>
+    <section id="features" className="py-24 md:py-32 bg-white dark:bg-gray-900 relative transition-colors duration-300">
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent opacity-50"></div>
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div 
@@ -62,13 +62,13 @@ const Features: React.FC = () => {
             viewport={{ once: true }}
             className="text-center max-w-3xl mx-auto mb-16"
         >
-            <span className="inline-block px-3 py-1 text-xs font-bold text-teal-300 bg-teal-900/30 rounded-full mb-6 border border-teal-500/20 tracking-wider uppercase">
+            <span className="inline-block px-3 py-1 text-xs font-bold text-teal-600 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/30 rounded-full mb-6 border border-teal-500/20 tracking-wider uppercase">
                 Capabilities
             </span>
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6 text-white">
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6 text-gray-900 dark:text-white">
                 Powerful AI Features
             </h2>
-            <p className="text-lg md:text-xl text-gray-400 leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
                 Discover what makes CORTEXIFY the most advanced and user-friendly AI conversation platform available today.
             </p>
         </motion.div>

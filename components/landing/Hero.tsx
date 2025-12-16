@@ -8,24 +8,24 @@ const Hero: React.FC = () => {
   const [isLearnMoreOpen, setIsLearnMoreOpen] = useState(false);
 
   return (
-    <section id="home" className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden min-h-screen flex items-center">
-        <div className="absolute inset-0 bg-grid-gray-700/20 [mask-image:linear-gradient(to_bottom,white_20%,transparent_100%)]"></div>
+    <section id="home" className="relative pt-24 pb-16 md:pt-32 md:pb-24 overflow-hidden min-h-screen flex items-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <div className="absolute inset-0 bg-grid-gray-900/5 dark:bg-grid-gray-700/20 [mask-image:linear-gradient(to_bottom,white_20%,transparent_100%)] pointer-events-none"></div>
         {/* Ambient background glow */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-900/30 rounded-full blur-3xl -z-10 animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-900/20 rounded-full blur-3xl -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 dark:bg-purple-900/30 rounded-full blur-3xl -z-10 animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-500/10 dark:bg-teal-900/20 rounded-full blur-3xl -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
                 <div className="text-center lg:text-left order-2 lg:order-1">
-                    <span className="inline-block px-3 py-1 text-xs font-semibold text-teal-300 bg-teal-900/50 rounded-full mb-6 border border-teal-500/20 backdrop-blur-sm">
+                    <span className="inline-block px-3 py-1 text-xs font-semibold text-teal-600 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/50 rounded-full mb-6 border border-teal-500/20 backdrop-blur-sm">
                         Powered by Cortex-2.5 Neural Engine
                     </span>
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 leading-tight text-gray-900 dark:text-white">
                         The Future of
                         <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-purple-400 to-pink-500 animate-gradient-x">AI Conversation</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 via-purple-500 to-pink-500 dark:from-teal-300 dark:via-purple-400 dark:to-pink-500 animate-gradient-x">AI Conversation</span>
                     </h1>
-                    <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto lg:mx-0 mb-8 leading-relaxed">
+                    <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto lg:mx-0 mb-8 leading-relaxed">
                         Experience intelligent, contextual, and engaging conversations with CORTEXIFY. Our advanced AI assistant understands you, learns with you, and helps you achieve more.
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
@@ -37,7 +37,7 @@ const Hero: React.FC = () => {
                         </Link>
                         <button 
                             onClick={() => setIsLearnMoreOpen(true)}
-                            className="px-8 py-4 font-bold text-white bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors border border-gray-700 hover:border-gray-600"
+                            className="px-8 py-4 font-bold text-gray-800 dark:text-white bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 shadow-sm"
                         >
                             Learn More &rarr;
                         </button>

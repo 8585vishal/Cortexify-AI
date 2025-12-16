@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../components/common/Logo';
+import { SunIcon, MoonIcon } from '../components/common/Icons';
 
 type AuthState = 'login' | 'signup' | 'otp';
 
@@ -20,6 +22,7 @@ const AuthPage: React.FC = () => {
   });
   
   const { login, signup, verifyOtp } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,8 +111,17 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 font-sans">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl relative overflow-hidden">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 font-sans relative">
+      {/* Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 p-2 rounded-full text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors z-10"
+        aria-label="Toggle theme"
+      >
+        {theme === 'dark' ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
+      </button>
+
+      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl relative overflow-hidden m-4">
         {/* Background Accent */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-pink-500"></div>
         

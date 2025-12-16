@@ -78,13 +78,16 @@ const Header: React.FC<HeaderProps> = ({ forceDark = false, onOpenProfile }) => 
 
                     {/* Right Side Icons & Buttons */}
                     <div className="flex items-center space-x-2 md:space-x-4">
-                        <button
-                            onClick={toggleTheme}
-                            className={`p-2 rounded-full transition-colors ${forceDark ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800'}`}
-                            aria-label="Toggle theme"
-                        >
-                            {theme === 'dark' || forceDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-                        </button>
+                        {/* Only show theme toggle if NOT forced dark (Landing page is fixed dark) */}
+                        {!forceDark && (
+                            <button
+                                onClick={toggleTheme}
+                                className={`p-2 rounded-full transition-colors text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800`}
+                                aria-label="Toggle theme"
+                            >
+                                {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                            </button>
+                        )}
                         
                          {/* Mobile Menu Button */}
                         <div className="md:hidden">

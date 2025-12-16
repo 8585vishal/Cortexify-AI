@@ -36,8 +36,8 @@ const LandingPage: React.FC = () => {
   }, [location]);
 
   return (
-    <div className="bg-gray-900 text-white font-sans">
-      <Header forceDark={true} />
+    <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-sans transition-colors duration-300">
+      <Header />
       <main>
         <Hero />
         <Stats />

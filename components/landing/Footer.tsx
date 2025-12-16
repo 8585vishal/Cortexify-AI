@@ -177,41 +177,41 @@ const Footer: React.FC = () => {
 
   return (
     <>
-    <footer className="bg-gray-900 border-t border-gray-800 text-gray-400 relative z-10">
+    <footer className="bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 relative z-10 transition-colors duration-300">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-12 lg:gap-8">
           {/* Company Info */}
           <div className="md:col-span-1 lg:col-span-2 space-y-6">
             <Logo />
-            <p className="text-sm leading-relaxed max-w-sm text-gray-500">
+            <p className="text-sm leading-relaxed max-w-sm text-gray-600 dark:text-gray-500">
               The future of AI conversation. Experience intelligent, contextual, and engaging conversations powered by advanced Cortex-2.5 technology.
             </p>
             <div className="flex space-x-5">
-              <a href="https://github.com/8585vishal" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-white transition-colors duration-300 transform hover:scale-110"><GithubIcon className="w-5 h-5" /></a>
-              <a href="https://www.linkedin.com/in/vishal-raj-purohit-b3a0492a4" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-blue-400 transition-colors duration-300 transform hover:scale-110"><LinkedinIcon className="w-5 h-5" /></a>
-              <a href="https://vishalrajpurohit.vercel.app/" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-teal-400 transition-colors duration-300 transform hover:scale-110"><GlobeAltIcon className="w-5 h-5" /></a>
+              <a href="https://github.com/8585vishal" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors duration-300 transform hover:scale-110"><GithubIcon className="w-5 h-5" /></a>
+              <a href="https://www.linkedin.com/in/vishal-raj-purohit-b3a0492a4" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-300 transform hover:scale-110"><LinkedinIcon className="w-5 h-5" /></a>
+              <a href="https://vishalrajpurohit.vercel.app/" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-teal-500 dark:hover:text-teal-400 transition-colors duration-300 transform hover:scale-110"><GlobeAltIcon className="w-5 h-5" /></a>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold text-white tracking-wider uppercase text-sm mb-6">Quick Links</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white tracking-wider uppercase text-sm mb-6">Quick Links</h3>
             <ul className="space-y-3 text-sm">
-              <li><button onClick={() => handleScrollTo('home')} className="hover:text-teal-400 transition-colors text-left">Home</button></li>
-              <li><button onClick={() => handleScrollTo('features')} className="hover:text-teal-400 transition-colors text-left">Features</button></li>
-              <li><button onClick={() => handleScrollTo('testimonials')} className="hover:text-teal-400 transition-colors text-left">Testimonials</button></li>
-              <li><button onClick={() => handleScrollTo('pricing')} className="hover:text-teal-400 transition-colors text-left">Pricing</button></li>
+              <li><button onClick={() => handleScrollTo('home')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Home</button></li>
+              <li><button onClick={() => handleScrollTo('features')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Features</button></li>
+              <li><button onClick={() => handleScrollTo('testimonials')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Testimonials</button></li>
+              <li><button onClick={() => handleScrollTo('pricing')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Pricing</button></li>
             </ul>
           </div>
           
           {/* Product */}
           <div>
-            <h3 className="font-semibold text-white tracking-wider uppercase text-sm mb-6">Product</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white tracking-wider uppercase text-sm mb-6">Product</h3>
             <ul className="space-y-3 text-sm">
-              <li><Link to="/chat" className="hover:text-teal-400 transition-colors">AI Chat</Link></li>
-              <li><button onClick={() => openModal('api')} className="hover:text-teal-400 transition-colors text-left">API Access</button></li>
-              <li><button onClick={() => openModal('docs')} className="hover:text-teal-400 transition-colors text-left">Documentation</button></li>
-              <li><button onClick={() => openModal('status')} className="hover:text-teal-400 transition-colors text-left flex items-center">
+              <li><Link to="/chat" className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors">AI Chat</Link></li>
+              <li><button onClick={() => openModal('api')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">API Access</button></li>
+              <li><button onClick={() => openModal('docs')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Documentation</button></li>
+              <li><button onClick={() => openModal('status')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left flex items-center">
                   System Status 
                   <span className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               </button></li>
@@ -220,23 +220,23 @@ const Footer: React.FC = () => {
           
           {/* Support */}
           <div>
-            <h3 className="font-semibold text-white tracking-wider uppercase text-sm mb-6">Support</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white tracking-wider uppercase text-sm mb-6">Support</h3>
             <ul className="space-y-3 text-sm">
-              <li><button onClick={() => handleScrollTo('contact')} className="hover:text-teal-400 transition-colors text-left">Contact Us</button></li>
-              <li><button onClick={() => openModal('help')} className="hover:text-teal-400 transition-colors text-left">Help Center</button></li>
-              <li><button onClick={() => openModal('privacy')} className="hover:text-teal-400 transition-colors text-left">Privacy Policy</button></li>
-              <li><button onClick={() => openModal('terms')} className="hover:text-teal-400 transition-colors text-left">Terms of Service</button></li>
+              <li><button onClick={() => handleScrollTo('contact')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Contact Us</button></li>
+              <li><button onClick={() => openModal('help')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Help Center</button></li>
+              <li><button onClick={() => openModal('privacy')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Privacy Policy</button></li>
+              <li><button onClick={() => openModal('terms')} className="hover:text-teal-600 dark:hover:text-teal-400 transition-colors text-left">Terms of Service</button></li>
             </ul>
           </div>
         </div>
       </div>
-      <div className="border-t border-gray-800 bg-gray-900/50 py-8">
+      <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm">
-          <p className="text-gray-500">&copy; 2025 CORTEXIFY. All rights reserved.</p>
+          <p className="text-gray-500 dark:text-gray-500">&copy; 2025 CORTEXIFY. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <button onClick={() => openModal('privacy')} className="text-gray-500 hover:text-white transition-colors">Privacy</button>
-            <button onClick={() => openModal('terms')} className="text-gray-500 hover:text-white transition-colors">Terms</button>
-            <button className="text-gray-500 hover:text-white transition-colors cursor-default">Cookies</button>
+            <button onClick={() => openModal('privacy')} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">Privacy</button>
+            <button onClick={() => openModal('terms')} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">Terms</button>
+            <button className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors cursor-default">Cookies</button>
           </div>
         </div>
       </div>
