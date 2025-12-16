@@ -30,7 +30,7 @@ const About: React.FC = () => {
                     <div className="absolute -inset-2 bg-gradient-to-br from-teal-500 via-purple-500 to-pink-500 rounded-full blur-md opacity-70 group-hover:opacity-100 transition duration-500 animate-spin-slow" style={{ animationDuration: '10s' }}></div>
                     <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-gray-900 shadow-2xl z-10 bg-gray-800 flex items-center justify-center">
                         <img 
-                            src="/vishal new.jpg" 
+                            src="https://drive.google.com/uc?export=view&id=1xX_sP-5XQthPlA22fOB7BmDTiNmWRss5" 
                             alt="Vishal Raj Purohit" 
                             className="w-full h-full object-cover" 
                         />
