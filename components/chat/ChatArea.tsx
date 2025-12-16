@@ -27,7 +27,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate
   const [isLoading, setIsLoading] = useState(false);
   const [isThinkingMode, setIsThinkingMode] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Ref to track if user is at the bottom. Default to true to scroll on load.
+  const isUserNearBottomRef = useRef(true);
+
   const titleGeneratedRef = useRef(false);
   
   // Ref to hold the AbortController for cleaning up on unmount or new requests
@@ -39,6 +43,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate
       if (session.messages.length === 0) {
         titleGeneratedRef.current = false;
       }
+      // Reset scroll lock on session change
+      isUserNearBottomRef.current = true;
     } else {
       setMessages([]);
       titleGeneratedRef.current = false;
@@ -51,11 +57,34 @@ const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate
     }
   }, [messages, session, onMessagesUpdate]);
 
+  // Smart Auto-Scroll Logic
+  const handleScroll = () => {
+      if (scrollRef.current) {
+          const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+          const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+          // Consider user near bottom if within 100px.
+          // This allows for small layout shifts or padding without losing lock.
+          isUserNearBottomRef.current = distanceToBottom < 150;
+      }
+  };
 
   useEffect(() => {
-    if (scrollRef.current) {
-        // Use immediate scroll for better UX during typing
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    const lastMsg = messages[messages.length - 1];
+    const isUserMessage = lastMsg?.sender === 'user';
+    
+    // Always scroll to bottom for new user messages or if we are editing
+    if (isUserMessage || editingMessageId) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        isUserNearBottomRef.current = true; // Re-engage lock
+        return;
+    }
+
+    // For AI messages (streaming), only scroll if user hasn't manually scrolled up
+    if (isUserNearBottomRef.current) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
     }
   }, [messages, isLoading, editingMessageId]);
 
@@ -92,6 +121,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate
     const userMessage: Message = { id: `user-${Date.now()}`, text: displayText, sender: 'user' };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    // Ensure we scroll to bottom when starting
+    isUserNearBottomRef.current = true;
 
     const aiMessageId = `ai-${Date.now()}`;
     // Initialize AI message
@@ -159,6 +190,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate
     if (!originalMessage || editingMessageId) return;
 
     setEditingMessageId(messageId);
+    isUserNearBottomRef.current = true; // Reset scroll lock
     
     try {
         const stream = editContentStream(originalMessage.text, action);
@@ -271,7 +303,20 @@ const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate
             <div className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] bg-teal-200/20 dark:bg-teal-900/10 rounded-full blur-[80px]" style={{ animationDuration: '4s' }}></div>
         </div>
 
-        <div ref={scrollRef} className="absolute inset-0 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth z-10">
+        {/* 
+            Scroll Container Improvements for Mobile:
+            - removed 'scroll-smooth' to prevent conflict with rapid auto-scroll
+            - added 'overscroll-behavior-y: contain' to prevent body scroll
+            - added 'touch-action: pan-y' explicitly
+            - added 'onScroll' handler for smart auto-scroll
+            - added padding-bottom to ensure last message is visible above input
+        */}
+        <div 
+            ref={scrollRef} 
+            onScroll={handleScroll}
+            className="absolute inset-0 overflow-y-auto p-4 sm:p-6 space-y-6 z-10 overscroll-contain touch-pan-y"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+        >
             <AnimatePresence initial={false}>
             {messages.map((msg, index) => (
                 <motion.div
@@ -290,6 +335,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({ session, settings, onMessagesUpdate
             ))}
             </AnimatePresence>
             {isLoading && messages[messages.length-1]?.sender === 'user' && <TypingIndicator />}
+            {/* Spacer to ensure scrolling to bottom clears the input area visual */}
+            <div className="h-4" /> 
         </div>
       </div>
       
