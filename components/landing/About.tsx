@@ -31,7 +31,7 @@ const About: React.FC = () => {
                     <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-gray-900 shadow-2xl z-10 bg-gray-800 flex items-center justify-center">
                         <img 
                             src="https://drive.google.com/file/d/1xX_sP-5XQthPlA22fOB7BmDTiNmWRss5/view?usp=sharing" 
-                            alt="Vishal Raj Purohit" 
+                            alt="" 
                             className="w-full h-full object-cover" 
                         />
                     </div>
