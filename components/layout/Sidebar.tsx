@@ -6,7 +6,7 @@ import { ChatSession } from '../../types';
 import { 
     PlusIcon, MessageSquareIcon, LogOutIcon, 
     PencilIcon, TrashIcon, SearchIcon, UserIcon, 
-    SettingsIcon, HelpCircleIcon, PaletteIcon, SunIcon, MoonIcon
+    SettingsIcon, HelpCircleIcon, PaletteIcon, SunIcon, MoonIcon, XIcon
 } from '../common/Icons';
 import Modal from '../common/Modal';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -22,11 +22,13 @@ interface SidebarProps {
   onOpenProfile: () => void;
   onOpenSettings: () => void;
   onOpenHelp: () => void;
+  isOpen: boolean; // Control mobile visibility
+  onClose: () => void; // Close sidebar on mobile
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
     sessions, onNewChat, onSelectSession, onRenameSession, onDeleteSession, 
-    activeSessionId, onOpenProfile, onOpenSettings, onOpenHelp 
+    activeSessionId, onOpenProfile, onOpenSettings, onOpenHelp, isOpen, onClose 
 }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -104,17 +106,34 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-    <aside className="w-64 flex flex-col p-4 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 hidden md:flex">
+    <aside 
+      className={`
+        flex flex-col p-4 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 
+        w-64 z-50 transition-transform duration-300 ease-in-out
+        absolute inset-y-0 left-0 md:static md:translate-x-0
+        ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+      `}
+    >
       {/* Brand & Toggle */}
       <div className="flex items-center justify-between mb-6 px-2">
         <Logo className="scale-90 origin-left" textSize="text-xl" />
-        <button
-            onClick={toggleTheme}
-            className="p-2 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 rounded-full transition-colors"
-            title="Toggle Theme"
-        >
-            {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center space-x-1">
+            <button
+                onClick={toggleTheme}
+                className="p-2 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 rounded-full transition-colors"
+                title="Toggle Theme"
+            >
+                {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+            </button>
+            {/* Mobile Close Button */}
+            <button 
+                onClick={onClose}
+                className="md:hidden p-2 text-gray-500 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 rounded-full transition-colors"
+                aria-label="Close sidebar"
+            >
+                <XIcon className="w-6 h-6" />
+            </button>
+        </div>
       </div>
       
       <button

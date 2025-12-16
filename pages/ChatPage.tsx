@@ -25,6 +25,9 @@ const ChatPage: React.FC = () => {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isFeatureModalOpen, setIsFeatureModalOpen] = useState(false);
     const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+    
+    // State for Mobile Sidebar visibility
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const userSessionsKey = user ? `cortexify-chat-sessions-${user.id}` : null;
     const userSettingsKey = user ? `cortexify-chat-settings-${user.id}` : null;
@@ -88,10 +91,12 @@ const ChatPage: React.FC = () => {
         };
         setSessions(prev => [newSession, ...prev]);
         setActiveSessionId(newSession.id);
+        setIsSidebarOpen(false); // Close sidebar on mobile after action
     };
 
     const selectSession = (session: ChatSession) => {
         setActiveSessionId(session.id);
+        setIsSidebarOpen(false); // Close sidebar on mobile after action
     };
     
     const handleSaveSettings = (newSettings: ChatSettings) => {
@@ -128,10 +133,20 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-screen font-sans bg-white dark:bg-gray-900 text-black dark:text-white overflow-hidden relative">
+        // Use 100dvh to ensure full height on mobile browsers with address bars
+        <div className="flex flex-col h-[100dvh] font-sans bg-white dark:bg-gray-900 text-black dark:text-white overflow-hidden relative">
             <Header onOpenProfile={() => setIsProfileModalOpen(true)} />
             
             <div className="flex flex-1 h-full overflow-hidden pt-16 relative">
+                
+                {/* Mobile Sidebar Backdrop */}
+                {isSidebarOpen && (
+                    <div 
+                        className="absolute inset-0 z-40 bg-black/50 md:hidden transition-opacity backdrop-blur-sm"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )}
+
                 <Sidebar 
                     sessions={sessions} 
                     onNewChat={handleNewChat} 
@@ -142,6 +157,8 @@ const ChatPage: React.FC = () => {
                     onOpenProfile={() => setIsProfileModalOpen(true)}
                     onOpenSettings={() => setIsSettingsModalOpen(true)}
                     onOpenHelp={() => setIsHelpModalOpen(true)}
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
                 />
                 
                 <main className="flex-1 flex flex-col h-full overflow-hidden w-full relative z-0">
@@ -154,6 +171,7 @@ const ChatPage: React.FC = () => {
                         modelName={MODEL_NAME}
                         onRenameSession={handleRenameSession}
                         onNewChat={handleNewChat}
+                        onOpenSidebar={() => setIsSidebarOpen(true)}
                     />
                 </main>
             </div>
