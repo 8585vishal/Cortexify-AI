@@ -25,17 +25,15 @@ const About: React.FC = () => {
                 {/* Decorative gradient blob inside card */}
                 <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-3xl group-hover:bg-purple-500/30 transition-colors duration-500"></div>
 
-                {/* Image Section - Placeholder */}
+                {/* Image Section */}
                 <div className="relative flex-shrink-0">
                     <div className="absolute -inset-2 bg-gradient-to-br from-teal-500 via-purple-500 to-pink-500 rounded-full blur-md opacity-70 group-hover:opacity-100 transition duration-500 animate-spin-slow" style={{ animationDuration: '10s' }}></div>
                     <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-gray-900 shadow-2xl z-10 bg-gray-800 flex items-center justify-center">
-                        {
-                            <img src="vishal new.jpg" alt="Vishal Raj Purohit" className="w-full h-full object-cover" />
-                        }
-                        <div className="text-center p-4">
-                            <span className="block text-4xl mb-2">📷</span>
-                            <span className="text-gray-500 text-xs uppercase tracking-wider font-semibold">Photo Placeholder</span>
-                        </div>
+                        <img 
+                            src="/vishal new.jpg" 
+                            alt="Vishal Raj Purohit" 
+                            className="w-full h-full object-cover" 
+                        />
                     </div>
                     {/* Floating Status Badge */}
                     <div className="absolute bottom-2 right-2 bg-gray-900/90 backdrop-blur-md border border-gray-700 py-1.5 px-2.5 rounded-lg shadow-xl z-20 transform group-hover:translate-y-[-3px] transition-transform duration-300">
