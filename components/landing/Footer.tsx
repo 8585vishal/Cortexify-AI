@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../common/Logo';
-import { GithubIcon, LinkedinIcon, GlobeAltIcon, CheckIcon, ShieldCheckIcon, CodeBracketIcon, BoltIcon } from '../common/Icons';
+import { GithubIcon, LinkedinIcon, GlobeAltIcon, CheckIcon, ShieldCheckIcon, CodeBracketIcon, BoltIcon, PaletteIcon, BrainIcon } from '../common/Icons';
 import Modal from '../common/Modal';
 
 type ModalType = 'api' | 'docs' | 'status' | 'privacy' | 'terms' | 'help' | null;
@@ -58,20 +58,58 @@ const Footer: React.FC = () => {
               );
           case 'docs':
                return (
-                <div className="space-y-4 text-gray-600 dark:text-gray-300">
-                    <p className="text-sm">Welcome to the CORTEXIFY Developer Hub. Our SDKs make it simple to add AI to your app.</p>
-                    <div className="space-y-2">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">Quick Start</h4>
+                <div className="space-y-6 text-gray-600 dark:text-gray-300 max-h-[60vh] overflow-y-auto pr-2">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">CORTEXIFY Technical Documentation</h3>
+                        <p className="text-sm">
+                            A comprehensive overview of the technology stack and architecture powering this application.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                            <CodeBracketIcon className="w-4 h-4 mr-2 text-teal-500" /> Core Frameworks
+                        </h4>
                         <ul className="list-disc pl-5 space-y-1 text-sm">
-                            <li>Authentication & API Keys</li>
-                            <li>Chat Completion Endpoints</li>
-                            <li>Embeddings & Fine-tuning</li>
-                            <li>Rate Limits & Quotas</li>
+                            <li><strong>React 19:</strong> UI Library for building component-based interfaces with the latest hooks.</li>
+                            <li><strong>TypeScript:</strong> Strongly typed programming language for robustness.</li>
+                            <li><strong>Vite:</strong> High-performance build tool and development server.</li>
                         </ul>
                     </div>
-                    <button className="text-teal-500 font-medium hover:underline text-sm flex items-center">
-                        View Full Documentation <CodeBracketIcon className="w-4 h-4 ml-1"/>
-                    </button>
+
+                    <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                            <PaletteIcon className="w-4 h-4 mr-2 text-purple-500" /> Styling & UI
+                        </h4>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                            <li><strong>Tailwind CSS:</strong> Utility-first CSS framework for rapid styling and dark mode.</li>
+                            <li><strong>Framer Motion:</strong> Production-ready animation library for smooth transitions.</li>
+                            <li><strong>Glassmorphism:</strong> Custom UI design language using backdrop blurs and gradients.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                            <BrainIcon className="w-4 h-4 mr-2 text-blue-500" /> AI & Services
+                        </h4>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                            <li><strong>Google GenAI SDK:</strong> Direct integration with Gemini 2.5 Flash & 3 Pro models.</li>
+                            <li><strong>Web Speech API:</strong> Native browser API for Speech-to-Text functionality.</li>
+                            <li><strong>Local Storage:</strong> Mock backend for persistence of chats and auth state.</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                            <ShieldCheckIcon className="w-4 h-4 mr-2 text-green-500" /> Features
+                        </h4>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                            <li>Auth Simulation (Login/Signup/OTP)</li>
+                            <li>Streaming Chat Responses</li>
+                            <li>Markdown & Code Highlighting</li>
+                            <li>File Analysis & Vision Capabilities</li>
+                        </ul>
+                    </div>
                 </div>
             );
           case 'status':
